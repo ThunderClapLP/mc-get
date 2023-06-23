@@ -1,0 +1,8 @@
+/CurseForge.cs
+proxy.txt
+
+/MCGet/obj/
+*.user
+/MCGet/bin/
+
+.vs/

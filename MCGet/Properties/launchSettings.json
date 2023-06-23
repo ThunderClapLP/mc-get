@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "MCGet": {
+      "commandName": "Project",
+      "commandLineArgs": "install fabulously-optimized:1.19.2 craftify:fabric simple-voice-chat:fabric sodium:1.19.2 "
+    }
+  }
+}
