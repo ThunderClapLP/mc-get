@@ -70,10 +70,8 @@ namespace MCGet.ModLoaders
 
                 while (!quilt.HasExited) {
                     spinner.Update();
-                    Thread.Sleep(100);
+                    quilt.WaitForExit(100);
                 }
-
-                quilt.WaitForExit();
 
                 if (quilt.ExitCode != 0)
                 {

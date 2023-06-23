@@ -72,10 +72,8 @@ namespace MCGet.ModLoaders
 
                 while (!fabric.HasExited) {
                     spinner.Update();
-                    Thread.Sleep(100);
+                    fabric.WaitForExit(100);
                 }
-
-                fabric.WaitForExit();
 
                 if (fabric.ExitCode != 0)
                 {

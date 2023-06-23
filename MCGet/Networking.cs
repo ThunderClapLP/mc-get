@@ -17,7 +17,7 @@ namespace MCGet
             using HttpClient client = new HttpClient();
             if (Program.archPath.EndsWith(".mrpack"))
             {
-                //only ose useragent with modrinth
+                //only use useragent with modrinth
                 client.DefaultRequestHeaders.UserAgent.ParseAdd(Program.api_user_agent);
             }
             Task<Stream> streamTask = client.GetStreamAsync(url);
@@ -25,13 +25,8 @@ namespace MCGet
             spinner?.Draw();
             while (!streamTask.IsCompleted)
             {
-                for (int i = 0; i < 10 && !streamTask.IsCompleted; i++)
-                {
-                    Thread.Sleep(100);
-                    if (i % 2 == 0)
-                        spinner?.Update();
-
-                }
+                streamTask.Wait(100);
+                spinner?.Update();
             }
 
             if (!streamTask.IsCompletedSuccessfully)
@@ -55,13 +50,8 @@ namespace MCGet
             spinner?.Draw();
             while (!copyTask.IsCompleted)
             {
-                for (int i = 0; i < 10 && !copyTask.IsCompleted; i++)
-                {
-                    Thread.Sleep(100);
-                    if (i % 2 == 0)
-                        spinner?.Update();
-
-                }
+                copyTask.Wait(100);
+                spinner?.Update();
             }
 
             if (!copyTask.IsCompletedSuccessfully)
