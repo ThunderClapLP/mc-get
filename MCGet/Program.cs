@@ -24,7 +24,7 @@ namespace MCGet
         public static string tempDir = "/temp/";
         public static string backupDir = "/backup/";
         public static string archiveDir = "/archives/";
-        public static string api_user_agent = "mc-get/0.1.1";
+        public static string api_user_agent = "ThunderClapLP/mc-get/0.1.0";
         public static Backup backup = new Backup("");
 
         //command line args
