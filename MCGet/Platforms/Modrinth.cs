@@ -98,7 +98,7 @@ namespace MCGet.Platforms
         public override bool InstallDependencies()
         {
             //get modloader
-            string? modloaderVersion = "";
+            string modloaderVersion = "";
             try
             {
                 if (Program.manifestDoc != null)
@@ -122,7 +122,7 @@ namespace MCGet.Platforms
             }
             catch { }
 
-            if (modloaderVersion == null)
+            if (modloaderVersion == "")
             {
                 ConsoleTools.WriteError("Could not find a modloader");
                 Program.RevertChanges();
