@@ -8,27 +8,33 @@ At the moment only [Modrinth](https://modrinth.com/) is supported. [Curseforge](
 
 ## Usage
 
-    Usage: 
-      mc-get (flags) <archivepath>
-      mc-get (flags) install (<slug> | <id> | <name>):<mcversion>:<modloader>
+    Usage:
+        mc-get (flags) <archivepath>
+        mc-get (flags) <command> (parameters)
 
     Flags:
-      -h / --help         :  displays this help page
-      -r                  :  deletes modpack and restores old state
-      -s                  :  performs a silent install. No user input needed
-      -f / --fix-missing  :  retries to download failed mods
-      -m <path>           :  specifies minecraft installation path
-      -v / --version      :  displays the current version
-    
+        -h / --help         :  displays this help page
+        -r                  :  deletes modpack and restores old state
+        -s                  :  performs a silent install. No user input needed
+        -f / --fix-missing  :  retries to download failed mods
+        -m <path>           :  specifies minecraft installation path
+        -v / --version      :  displays the current version
+
+    Commands:
+        install (<slug> | <id> | <name>):<mcversion>:<modloader>
+            installs a mod / modpack
+
+        search <query>
+            searches for modrinth projects
+
     Examples:
-      mc-get install sodium:1.19.3:fabric
-      mc-get install fabulously-optimized      
-      mc-get -s install fabulously-optimized
-      mc-get Fabulously.Optimized-4.10.5.mrpack
+        mc-get install sodium:1.19.3:fabric
+        mc-get install fabulously-optimized
+        mc-get -s install fabulously-optimized
+        mc-get Fabulously.Optimized-4.10.5.mrpack
+        mc-get -r
 
-      mc-get -r
-
-## OS Support
+## OS Compatibility
 
  - Windows: Working
  - Linux: Working

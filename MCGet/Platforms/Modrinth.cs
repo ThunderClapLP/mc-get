@@ -9,11 +9,13 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace MCGet.Platforms
 {
     public class Modrinth : Platform
     {
+        static string url = "https://api.modrinth.com/v2";
         List<String> downloadedMods = new List<String>();
         public override bool DownloadMods()
         {
@@ -81,7 +83,6 @@ namespace MCGet.Platforms
             spinner.top = Console.CursorTop;
 
             //parse download url
-
             ConsoleTools.ClearLine();
             Console.Write("Downloading " + Path.GetFileName(destinationPath));
 
@@ -201,7 +202,7 @@ namespace MCGet.Platforms
             Console.Write("Getting project info");
 
             //get mod
-            Task<string> getTask = client.GetStringAsync("https://api.modrinth.com/v2/project/" + name);
+            Task<string> getTask = client.GetStringAsync(url + "/project/" + name);
 
             //wait for completion
             while (!getTask.IsCompleted)
@@ -284,12 +285,12 @@ namespace MCGet.Platforms
 
                 //Console.WriteLine(getTask.Result);
 
-                doc = JsonDocument.Parse(getTask.Result);
+                JsonDocument versionsDoc = JsonDocument.Parse(getTask.Result);
                 JsonElement? matchingElement = null;
 
                 //find correct minecraft version
                 bool found = false;
-                foreach (JsonElement version in doc.RootElement.EnumerateArray())
+                foreach (JsonElement version in versionsDoc.RootElement.EnumerateArray())
                 {
                     foreach(JsonElement gameVersion in version.GetProperty("game_versions").EnumerateArray())
                     {
@@ -332,7 +333,7 @@ namespace MCGet.Platforms
                         loaderString += suppLoader.ToString() + ",";
                     }
                     loaderString = loaderString.TrimEnd(',');
-                    resStr = loaderString + "|" + resStr;
+                    resStr = doc.RootElement.GetProperty("project_type") + "|" + loaderString + "|" + resStr;
 
                     result.Add(resStr);
                     JsonElement dependencies;
@@ -368,7 +369,7 @@ namespace MCGet.Platforms
         {
             HttpClient client = new HttpClient();
             client.DefaultRequestHeaders.UserAgent.ParseAdd(Program.api_user_agent);
-            Task<string> getTask = client.GetStringAsync("https://api.modrinth.com/v2/version/" + version);
+            Task<string> getTask = client.GetStringAsync(url + "/version/" + version);
 
             while (!getTask.IsCompleted)
             {
@@ -380,6 +381,37 @@ namespace MCGet.Platforms
                 return "";
             }
             return JsonDocument.Parse(getTask.Result).RootElement.GetProperty("files").EnumerateArray().First().GetProperty("url").ToString() ?? "";
+        }
+
+        public static void SearchForProjects(string search, Spinner? spinner = null)
+        {
+            Console.Write("Searching for projects");
+
+            HttpClient client = new HttpClient();
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(Program.api_user_agent);
+
+            Task<string> response = client.GetStringAsync(url + "/search?query=" + HttpUtility.UrlEncode(search));
+
+            while (!response.IsCompleted)
+            {
+                response.Wait(100);
+                spinner?.Update();
+            }
+
+            if (!response.IsCompletedSuccessfully)
+            {
+                ConsoleTools.WriteResult(false);
+                return;
+            }
+
+            ConsoleTools.WriteResult(true);
+
+            JsonDocument json = JsonDocument.Parse(response.Result);
+
+            foreach (JsonElement project in json.RootElement.GetProperty("hits").EnumerateArray())
+            {
+                Console.WriteLine(project.GetProperty("project_type") + ": " + project.GetProperty("slug") + " (" + project.GetProperty("title") + ")");
+            }
         }
     }
 }

@@ -18,6 +18,8 @@ namespace MCGet
 {
     public class Program
     {
+        public enum COMMANDS { NONE = 0,  INSTALL, SEARCH };
+
         public static string archPath = "";
         public static string dir = "";
         public static string minecraftDir = "";
@@ -31,9 +33,8 @@ namespace MCGet
         public static bool cRestore = false;
         public static bool cSilent = false;
         public static bool cFixMissing = false;
-        public static string installName = "";
-        public static string installGameVersion = "";
-        public static string installLoader = "";
+        public static COMMANDS command = COMMANDS.NONE;
+        public static List<string> commandParams = new List<string>();
 
         public static JsonDocument? manifestDoc = null;
         static void Main(string[] args)
@@ -60,7 +61,7 @@ namespace MCGet
                         Console.WriteLine(@"
 Usage: 
     {ExecutableName} (flags) <archivepath>
-    {ExecutableName} (flags) install (<slug> | <id> | <name>):<mcversion>:<modloader>
+    {ExecutableName} (flags) <command> (parameters)
 
 Flags:
     -h / --help         :  displays this help page
@@ -69,13 +70,19 @@ Flags:
     -f / --fix-missing  :  retries to download failed mods
     -m <path>           :  specifies minecraft installation path
     -v / --version      :  displays the current version
+
+Commands:
+    install (<slug> | <id> | <name>):<mcversion>:<modloader>
+        installs a mod / modpack
+
+    search <query>
+        searches for modrinth projects
     
 Examples:
     {ExecutableName} install sodium:1.19.3:fabric
     {ExecutableName} install fabulously-optimized      
     {ExecutableName} -s install fabulously-optimized
     {ExecutableName} Fabulously.Optimized-4.10.5.mrpack
-
     {ExecutableName} -r
 ".Replace("{ExecutableName}", Assembly.GetExecutingAssembly().GetName().Name));
                         Environment.Exit(0);
@@ -95,20 +102,21 @@ Examples:
                     case "install":
                         if (i < args.Length - 1)
                         {
-                            installName = args[i + 1].Split(":")[0];
-                            for (int j = 1; j < args[i + 1].Split(":").Length; j++)
-                            {
-                                if (args[i + 1].Split(":")[j].ToLower().First() >= 'a' && args[i + 1].Split(":")[j].ToLower().First() <= 'z')
-                                {
-                                    installLoader = args[i + 1].Split(":")[j].ToLower();
-                                } else
-                                {
-                                    installGameVersion = args[i + 1].Split(":")[j];
-                                }
-                            }
+                            command = COMMANDS.INSTALL;
+                            commandParams.Clear();
+                            commandParams.Add(args[i + 1]);
                             i++;
                         }
                         invalidArgs = false;
+                        break;
+                    case "search":
+                        if (i < args.Length - 1)
+                        {
+                            invalidArgs = false;
+                            command = COMMANDS.SEARCH;
+                            commandParams.Clear();
+                            commandParams.Add(args[i + 1]);
+                        }
                         break;
                     default:
                         if (args[i].ToLower().EndsWith(".zip") || args[i].ToLower().EndsWith(".mrpack"))
@@ -163,99 +171,124 @@ Examples:
                     return;
                 }
 
-                if (installName != "")
+                Spinner spinner = new Spinner(Console.CursorTop);
+                spinner.Update();
+                switch(command)
                 {
-                    Spinner spinner = new Spinner(Console.CursorTop);
-                    spinner.Update();
-                    List<string>? urls = Modrinth.GetProject(installName, installGameVersion, installLoader, spinner);
-                    //download archive
-                    if (urls != null && urls[0] != "")
-                    {
-                        if (urls[0].EndsWith(".mrpack"))
+                    case COMMANDS.INSTALL:
+                        string installLoader = "";
+                        string installGameVersion = "";
+                        string installName = commandParams[0].Split(":")[0];
+                        for (int j = 1; j < commandParams[0].Split(":").Length; j++)
                         {
-                            //modpack
-                            urls[0] = urls[0].Split("|").Last(); //delete modloaders
-                            Console.Write("Downloading manifest file");
-                            spinner.top = Console.CursorTop;
-                            if (!Networking.DownloadFile(urls[0], dir + archiveDir + Path.GetFileName(HttpUtility.UrlDecode(urls[0])), spinner))
+                            if (commandParams[0].Split(":")[j].ToLower().First() >= 'a' && commandParams[0].Split(":")[j].ToLower().First() <= 'z')
                             {
-                                ConsoleTools.WriteResult(false);
-                                Environment.Exit(0);
-                                return;
+                                installLoader = commandParams[0].Split(":")[j].ToLower();
                             }
-
-                            archPath = dir + archiveDir + Path.GetFileName(HttpUtility.UrlDecode(urls[0]));
-                            ConsoleTools.WriteResult(true);
+                            else
+                            {
+                                installGameVersion = commandParams[0].Split(":")[j];
+                            }
                         }
-                        else if (urls[0].EndsWith(".jar"))
+                        if (installName != "")
                         {
-                            //single mod
-                            ConsoleTools.WriteError("Single mod:", 0);
-                            Console.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(urls[0])));
-                            if (urls.Count > 1)
+                            List<string>? urls = Modrinth.GetProject(installName, installGameVersion, installLoader, spinner);
+                            //download archive
+                            if (urls != null && urls[0] != "")
                             {
-                                Console.WriteLine("With dependencies:");
-                                for (int i = 1; i < urls.Count; i++)
+                                if (urls[0].Split("|")[0] == "modpack")
                                 {
-                                    Console.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(urls[i])));
+                                    //modpack
+                                    urls[0] = urls[0].Split("|").Last(); //delete modloaders
+                                    Console.Write("Downloading manifest file");
+                                    spinner.top = Console.CursorTop;
+                                    if (!Networking.DownloadFile(urls[0], dir + archiveDir + Path.GetFileName(HttpUtility.UrlDecode(urls[0])), spinner))
+                                    {
+                                        ConsoleTools.WriteResult(false);
+                                        Environment.Exit(0);
+                                        return;
+                                    }
+
+                                    archPath = dir + archiveDir + Path.GetFileName(HttpUtility.UrlDecode(urls[0]));
+                                    ConsoleTools.WriteResult(true);
                                 }
-                            }
-                            ConsoleTools.WriteError("Compatible modloaders: " + urls[0].Split("|").First(), 0);
-                            urls[0] = urls[0].Split("|").Last();
-                            if (!ConsoleTools.ConfirmDialog("Install single mod", true))
-                            {
-                                //user canceled
-                                Environment.Exit(0);
-                                return;
-                            }
-                            Console.Write("Downloading single mod");
-                            spinner.top = Console.CursorTop;
-                            for (int i = 0; i < urls.Count; i++)
-                            {
-                                if (!Networking.DownloadFile(urls[i], dir + tempDir + "mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), spinner))
+                                else if (urls[0].Split("|")[0] == "mod")
                                 {
-                                    ConsoleTools.WriteResult(false);
+                                    //single mod
+                                    ConsoleTools.WriteError("Single mod:", 0);
+                                    Console.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(urls[0].Split("|").Last())));
+                                    if (urls.Count > 1)
+                                    {
+                                        Console.WriteLine("With dependencies:");
+                                        for (int i = 1; i < urls.Count; i++)
+                                        {
+                                            Console.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(urls[i].Split("|").Last())));
+                                        }
+                                    }
+                                    ConsoleTools.WriteError("Compatible modloaders: " + urls[0].Split("|")[1], 0);
+                                    urls[0] = urls[0].Split("|").Last();
+                                    if (!ConsoleTools.ConfirmDialog("Install single mod", true))
+                                    {
+                                        //user canceled
+                                        Environment.Exit(0);
+                                        return;
+                                    }
+                                    Console.Write("Downloading single mod");
+                                    spinner.top = Console.CursorTop;
+                                    for (int i = 0; i < urls.Count; i++)
+                                    {
+                                        if (!Networking.DownloadFile(urls[i], dir + tempDir + "mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), spinner))
+                                        {
+                                            ConsoleTools.WriteResult(false);
+                                            Environment.Exit(0);
+                                            return;
+                                        }
+                                    }
+
+                                    ConsoleTools.WriteResult(true);
+
+                                    //copy mod
+
+                                    Console.Write("Copy mod");
+                                    for (int i = 0; i < urls.Count; i++)
+                                    {
+                                        try
+                                        {
+                                            File.Copy(dir + tempDir + "mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), minecraftDir + "/mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), true);
+                                        }
+                                        catch
+                                        {
+                                            ConsoleTools.WriteResult(false);
+                                            Environment.Exit(0);
+                                            return;
+                                        }
+                                    }
+
+                                    ConsoleTools.WriteResult(true);
+                                    Environment.Exit(0);
+                                    return;
+
+                                }
+                                else
+                                {
+                                    //unknown
+                                    ConsoleTools.WriteError("Unknown project type: " + urls[0].Split("|")[0]);
                                     Environment.Exit(0);
                                     return;
                                 }
                             }
-
-                            ConsoleTools.WriteResult(true);
-
-                            //copy mod
-
-                            Console.Write("Copy mod");
-                            for (int i = 0; i < urls.Count; i++)
+                            else
                             {
-                                try
-                                {
-                                    File.Copy(dir + tempDir + "mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), minecraftDir + "/mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), true);
-                                } catch
-                                {
-                                    ConsoleTools.WriteResult(false);
-                                    Environment.Exit(0);
-                                    return;
-                                }
+                                ConsoleTools.WriteError("No project with slug or id '" + installName + "' was found" + (installGameVersion != "" ? (" for version " + installGameVersion) : ""));
+                                Environment.Exit(0);
+                                return;
                             }
-
-                            ConsoleTools.WriteResult(true);
-                            Environment.Exit(0);
-                            return;
-
                         }
-                        else
-                        {
-                            //unknown
-                            ConsoleTools.WriteError("Unknown file extention");
-                            Environment.Exit(0);
-                            return;
-                        }
-                    } else
-                    {
-                        ConsoleTools.WriteError("No project with the slug '" + installName + "' was found" + (installGameVersion != "" ? (" for version " + installGameVersion) : ""));
+                        break;
+                    case COMMANDS.SEARCH:
+                        Modrinth.SearchForProjects(commandParams[0], spinner);
                         Environment.Exit(0);
-                        return;
-                    }
+                        break;
                 }
 
                 RestoreBackup();
