@@ -24,7 +24,7 @@ namespace MCGet
         public static string tempDir = "/temp/";
         public static string backupDir = "/backup/";
         public static string archiveDir = "/archives/";
-        public static string api_user_agent = "mc-get/0.1.1 (ThunderClapLP/mc-get)";
+        public static string api_user_agent = "mc-get/" + (Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.1") + " (ThunderClapLP/mc-get)";
         public static Backup backup = new Backup("");
 
         //command line args
@@ -68,6 +68,7 @@ Flags:
     -s                  :  performs a silent install. No user input needed
     -f / --fix-missing  :  retries to download failed mods
     -m <path>           :  specifies minecraft installation path
+    -v / --version      :  displays the current version
     
 Examples:
     {ExecutableName} install sodium:1.19.3:fabric
@@ -85,6 +86,11 @@ Examples:
                             minecraftDir = args[i + 1];
                             i++;
                         }
+                        break;
+                    case "-v":
+                    case "--version":
+                        Console.WriteLine(Assembly.GetExecutingAssembly().GetName().Name + " Version " + Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "unknown");
+                        Environment.Exit(0);
                         break;
                     case "install":
                         if (i < args.Length - 1)

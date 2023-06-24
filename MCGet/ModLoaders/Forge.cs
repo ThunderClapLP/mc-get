@@ -63,6 +63,7 @@ namespace MCGet.ModLoaders
                 forge.StartInfo.Arguments = "-jar \"" + Program.dir + Program.tempDir + Path.GetFileName(forgeFullUrl) + "\"";
                 forge.StartInfo.WorkingDirectory = Program.dir + Program.tempDir;
 
+                //NOTE: forge installer somehow fails with redirected output
                 //forge.StartInfo.RedirectStandardOutput = true;
                 //forge.StartInfo.RedirectStandardError = true;
                 //forge.StartInfo.RedirectStandardInput = true;

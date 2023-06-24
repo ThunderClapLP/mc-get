@@ -18,6 +18,7 @@ At the moment only [Modrinth](https://modrinth.com/) is supported. [Curseforge](
       -s                  :  performs a silent install. No user input needed
       -f / --fix-missing  :  retries to download failed mods
       -m <path>           :  specifies minecraft installation path
+      -v / --version      :  displays the current version
     
     Examples:
       mc-get install sodium:1.19.3:fabric
