@@ -327,7 +327,15 @@ Examples:
                 platform = new Modrinth();
             }
 
-            platform.InstallDependencies();
+            if (!platform.InstallDependencies())
+            {
+                //ConsoleTools.WriteError("")
+                if (!ConsoleTools.ConfirmDialog("Modloader installation failed! Continue anyway?", false))
+                {
+                    RevertChanges();
+                    Environment.Exit(1);
+                }
+            }
 
             //download mods
             platform.DownloadMods();
@@ -730,7 +738,7 @@ Examples:
                 else
                     ConsoleTools.WriteResult(false);
             }
-            System.Environment.Exit(0);
+            System.Environment.Exit(1);
         }
 
     }

@@ -100,6 +100,7 @@ namespace MCGet.Platforms
         {
             //get modloader
             string modloaderVersion = "";
+            ModLoader? modLoader = null;
             try
             {
                 if (Program.manifestDoc != null)
@@ -108,42 +109,29 @@ namespace MCGet.Platforms
                     if (Program.manifestDoc.RootElement.GetProperty("dependencies").TryGetProperty(Encoding.UTF8.GetBytes("fabric-loader"), out loader))
                     {
                         modloaderVersion = "fabric-" + loader.GetString();
+                        modLoader = new Fabric();
                     }
                     else if (Program.manifestDoc.RootElement.GetProperty("dependencies").TryGetProperty(Encoding.UTF8.GetBytes("forge-loader"), out loader))
                     {
                         modloaderVersion = "forge-" + loader.GetString();
+                        modLoader = new Forge();
                     }
                     else if (Program.manifestDoc.RootElement.GetProperty("dependencies").TryGetProperty(Encoding.UTF8.GetBytes("quilt-loader"), out loader))
                     {
                         modloaderVersion = "quilt-" + loader.GetString();
+                        modLoader = new Quilt();
                     }
-
-                    
                 }
             }
             catch { }
 
-            if (modloaderVersion == "")
+            if (modloaderVersion == "" || modLoader == null)
             {
-                ConsoleTools.WriteError("Could not find a modloader");
-                Program.RevertChanges();
+                ConsoleTools.WriteError("Could not find a compatible modloader");
                 return false;
             }
 
-            if (modloaderVersion.StartsWith("forge"))
-                new Forge().Install(Program.manifestDoc?.RootElement.GetProperty("dependencies").GetProperty("minecraft").GetString() ?? "", modloaderVersion);
-            else if (modloaderVersion.StartsWith("fabric"))
-                new Fabric().Install(Program.manifestDoc?.RootElement.GetProperty("dependencies").GetProperty("minecraft").GetString() ?? "", modloaderVersion);
-            else if (modloaderVersion.StartsWith("quilt"))
-                new Quilt().Install(Program.manifestDoc?.RootElement.GetProperty("dependencies").GetProperty("minecraft").GetString() ?? "", modloaderVersion);
-            else
-            {
-                ConsoleTools.WriteError("Modloader is not compatible");
-                Program.RevertChanges();
-                return false;
-            }
-
-            return true;
+            return modLoader?.Install(Program.manifestDoc?.RootElement.GetProperty("dependencies").GetProperty("minecraft").GetString() ?? "", modloaderVersion) ?? false;
         }
 
         public override bool InstallMods()

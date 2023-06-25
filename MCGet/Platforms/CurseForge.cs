@@ -139,22 +139,16 @@ namespace MCGet.Platforms
             if (modloaderVersion == null)
             {
                 ConsoleTools.WriteError("Could not find a modloader");
-                Program.RevertChanges();
                 return false;
             }
 
             if (modloaderVersion.StartsWith("forge"))
-                new Forge().Install(Program.manifestDoc?.RootElement.GetProperty("minecraft").GetProperty("version").GetString() ?? "", modloaderVersion);
+                return new Forge().Install(Program.manifestDoc?.RootElement.GetProperty("minecraft").GetProperty("version").GetString() ?? "", modloaderVersion);
             else if (modloaderVersion.StartsWith("fabric"))
-                new Fabric().Install(Program.manifestDoc?.RootElement.GetProperty("minecraft").GetProperty("version").GetString() ?? "", modloaderVersion);
-            else
-            {
-                ConsoleTools.WriteError("Modloader is not compatible");
-                Program.RevertChanges();
-                return false;
-            }
+                return new Fabric().Install(Program.manifestDoc?.RootElement.GetProperty("minecraft").GetProperty("version").GetString() ?? "", modloaderVersion);
 
-            return true;
+            ConsoleTools.WriteError("Modloader is not compatible");
+            return false;
         }
 
         public override bool InstallMods()
