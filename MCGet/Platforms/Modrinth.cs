@@ -37,12 +37,17 @@ namespace MCGet.Platforms
 
                     if (!Program.cFixMissing || Program.backup.IsModFailed(file.GetProperty("hashes").GetProperty("sha512").ToString() + ""))
                     {
-                        if (!DownloadMod(file.GetProperty("downloads").EnumerateArray().First().GetString() ?? "", Program.dir + Program.tempDir + "mods/" + file.GetProperty("path").ToString(), spinner))
+                        //make sure to only download client mods
+                        JsonElement? clientElem = file.GetOrNull("env")?.GetOrNull("client");
+                        if (clientElem == null || clientElem?.ToString() != "unsupported")
                         {
-                            failedMods.Add(file);
-                        } else
-                        {
-                            downloadedMods.Add(file.GetProperty("path").ToString());
+                            if (!DownloadMod(file.GetProperty("downloads").EnumerateArray().First().GetString() ?? "", Program.dir + Program.tempDir + "mods/" + file.GetProperty("path").ToString(), spinner))
+                            {
+                                failedMods.Add(file);
+                            } else
+                            {
+                                downloadedMods.Add(file.GetProperty("path").ToString());
+                            }
                         }
                     }
                     bar.value++;
