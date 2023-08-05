@@ -25,7 +25,14 @@ namespace MCGet
             spinner?.Draw();
             while (!streamTask.IsCompleted)
             {
-                streamTask.Wait(100);
+                try
+                {
+                    streamTask.Wait(100);
+                }
+                catch (System.AggregateException)
+                {
+                    break; //catch network errors
+                }
                 spinner?.Update();
             }
 
@@ -50,7 +57,15 @@ namespace MCGet
             spinner?.Draw();
             while (!copyTask.IsCompleted)
             {
-                copyTask.Wait(100);
+                try
+                {
+                    copyTask.Wait(100);
+                }
+                catch (System.AggregateException)
+                {
+                    break; //catch file system errors
+                    //TODO: handle disk full seperatly (Abort all downloads). Maybe an enum as return type
+                }
                 spinner?.Update();
             }
 

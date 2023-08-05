@@ -387,7 +387,14 @@ namespace MCGet.Platforms
 
             while (!response.IsCompleted)
             {
-                response.Wait(100);
+                try
+                {
+                    response.Wait(100);
+                }
+                catch (AggregateException)
+                {
+                    break; //catch network errors
+                }
                 spinner?.Update();
             }
 
