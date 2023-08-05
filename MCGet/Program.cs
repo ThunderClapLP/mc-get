@@ -463,6 +463,7 @@ Examples:
 
         }
 
+        //Copy archive to ensure --fix-missing works after the origional archive is deleted or moved by the user.
         static void CopyArchive()
         {
             try
@@ -480,7 +481,7 @@ Examples:
             }
             catch (Exception)
             {
-
+                backup.log.archiveFile = archPath; //use absolute path on failure
             }
         }
 
