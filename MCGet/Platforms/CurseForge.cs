@@ -192,7 +192,7 @@ namespace MCGet.Platforms
                     if (!File.Exists(modsDir + "/" + Path.GetFileName(file)))
                         Program.backup.BackopMod(modsDir + "/" + Path.GetFileName(file), false);
 
-                    File.Copy(file, modsDir + "/" + Path.GetFileName(file), true);
+                    File.Move(file, modsDir + "/" + Path.GetFileName(file), true);
                     bar.value++;
                     bar.Update();
                 }

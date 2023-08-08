@@ -29,7 +29,9 @@ namespace MCGet.Platforms
 
                 Spinner spinner = new Spinner(Console.CursorTop);
 
-                //get all mods and download
+                //get all mods and calculate required disk space in kilobytes
+                long requiredSpace = 0;
+                List<JsonElement> files = new List<JsonElement>();
                 foreach (JsonElement file in Program.manifestDoc.RootElement.GetProperty("files").EnumerateArray())
                 {
                     if (failedMods.Contains(file))
@@ -41,15 +43,36 @@ namespace MCGet.Platforms
                         JsonElement? clientElem = file.GetOrNull("env")?.GetOrNull("client");
                         if (clientElem == null || clientElem?.ToString() != "unsupported")
                         {
-                            if (!DownloadMod(file.GetProperty("downloads").EnumerateArray().First().GetString() ?? "", Program.dir + Program.tempDir + "mods/" + file.GetProperty("path").ToString(), spinner))
+                            if (!files.Any(x => x.GetOrNull("path")?.GetString() == file.GetOrNull("path")?.GetString())) //check if file with same path already exists in list
                             {
-                                failedMods.Add(file);
-                            } else
-                            {
-                                downloadedMods.Add(file.GetProperty("path").ToString());
+                                files.Add(file);
+                                requiredSpace += file.GetOrNull("fileSize")?.GetInt64() / 1024 ?? 0; //convert to kilobytes
                             }
                         }
                     }
+                }
+
+                //get free space on disc
+                long freeSpace = Math.Min(new DriveInfo(Program.dir).AvailableFreeSpace / 1024, new DriveInfo(Program.minecraftDir).AvailableFreeSpace / 1024);
+
+                if (requiredSpace > freeSpace - 10000) { //10MB buffer to prevent issues
+                    ConsoleTools.WriteError("Not enough disk space! " + Math.Max((requiredSpace - freeSpace - 10000) / 1024, 1) + " MB more requiered.");
+                    Program.RevertChanges(); //cannot proceed
+                    return false;
+                }
+
+                //download all mods
+                foreach (JsonElement file in files)
+                {
+
+                    if (!DownloadMod(file.GetProperty("downloads").EnumerateArray().First().GetString() ?? "", Program.dir + Program.tempDir + "mods/" + file.GetProperty("path").ToString(), spinner))
+                    {
+                        failedMods.Add(file);
+                    } else
+                    {
+                        downloadedMods.Add(file.GetProperty("path").ToString());
+                    }
+
                     bar.value++;
                     bar.Update();
                 }
@@ -166,7 +189,7 @@ namespace MCGet.Platforms
                     if (file.StartsWith("mods/") && !File.Exists(modsDir + "/" + Path.GetFileName(file)))
                         Program.backup.BackopMod(modsDir + "/" + Path.GetFileName(file), false);
 
-                    File.Copy(Program.dir + Program.tempDir + "mods/" + file, Program.minecraftDir + "/" + file, true);
+                    File.Move(Program.dir + Program.tempDir + "mods/" + file, Program.minecraftDir + "/" + file, true);
                     bar.value++;
                     bar.Update();
 
@@ -200,7 +223,23 @@ namespace MCGet.Platforms
             //wait for completion
             while (!getTask.IsCompleted)
             {
-                Thread.Sleep(100);
+                //HACK: This solution is really bad. Will be replaced soon with a propper single wait and a dynamic updater for spinner
+                try
+                {
+                    getTask.Wait(100);
+                }
+                catch (AggregateException e)
+                {
+                    if (e.InnerException?.Message.Contains("404") == true) //HACK: catch not found
+                    {
+                        ConsoleTools.WriteResult(false);
+                        return null;
+                    }
+                    ConsoleTools.WriteResult(false);
+                    ConsoleTools.WriteError("Connection to Modrinth failed");
+                    Environment.Exit(1); //Exit here to prevent no project found message from showing. I know this is bad
+                    return null;
+                }
                 spinner?.Update();
             }
 
@@ -266,7 +305,22 @@ namespace MCGet.Platforms
 
                 while (!getTask.IsCompleted)
                 {
-                    Thread.Sleep(100);
+                    //HACK: This solution is really bad. Will be replaced soon with a propper single wait and a dynamic updater for spinner
+                    try
+                    {
+                        getTask.Wait(100);
+                    }
+                    catch (AggregateException e)
+                    {
+                        if (e.InnerException?.Message.Contains("404") == true) //HACK: catch not found
+                        {
+                            ConsoleTools.WriteResult(false);
+                            return null;
+                        }
+                        ConsoleTools.WriteResult(false);
+                        ConsoleTools.WriteError("Connection to Modrinth failed");
+                        Environment.Exit(1); //Exit here to prevent no project found message from showing. I know this is bad
+                    }
                     spinner?.Update();
                 }
 
@@ -364,9 +418,14 @@ namespace MCGet.Platforms
             client.DefaultRequestHeaders.UserAgent.ParseAdd(Program.api_user_agent);
             Task<string> getTask = client.GetStringAsync(url + "/version/" + version);
 
-            while (!getTask.IsCompleted)
+            //I don't know why the spinner is not updated here. But anyway a single wait is enough in this case.
+            try
             {
-                Thread.Sleep(100);
+                getTask.Wait(10000);
+            }
+            catch (System.Exception)
+            {
+                return "";
             }
 
             if (!getTask.IsCompletedSuccessfully)
