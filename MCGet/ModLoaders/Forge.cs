@@ -24,36 +24,10 @@ namespace MCGet.ModLoaders
 
             loaderVersion = loaderVersion.Replace("forge-", "");
             string forgeFullUrl = url.Replace("{VERSION}", minecraftVersion).Replace("{FORGE_VERSION}", loaderVersion);
-            Console.WriteLine(forgeFullUrl);
-
-            Console.CursorLeft = 0;
-            Console.WriteLine("");
-            Console.CursorTop -= 1;
-
             Spinner spinner = new Spinner(Console.CursorTop);
-            spinner.top = Console.CursorTop;
 
-            Console.Write("Downloading " + Path.GetFileName(forgeFullUrl) + " ");
-
-            spinner.Update();
-
-            if (Networking.DownloadFile(forgeFullUrl, Program.dir + Program.tempDir + Path.GetFileName(url), spinner))
-            {
-                ConsoleTools.WriteResult(true);
-            }
-            else
-            {
-                //failed
-                ConsoleTools.WriteResult(false);
+            if (!DownloadLoader(forgeFullUrl, spinner))
                 return false;
-            }
-
-            string javaPath = "";
-
-            if (Program.DownloadJavaIfNotPresent())
-            {
-                javaPath = Program.dir + "/java/jdk-19/bin/";
-            }
 
             try
             {

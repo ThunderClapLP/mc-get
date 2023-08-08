@@ -24,74 +24,22 @@ namespace MCGet.ModLoaders
             }
 
             loaderVersion = loaderVersion.Replace("fabric-", ""); //make sure version has the correct format
-
-            Console.CursorLeft = 0;
-            Console.WriteLine("");
-            Console.CursorTop -= 1;
-
             Spinner spinner = new Spinner(Console.CursorTop);
-            spinner.top = Console.CursorTop;
 
-            Console.Write("Downloading " + Path.GetFileName(url) + " ");
-
-            spinner.Update();
-
-            if (Networking.DownloadFile(url, Program.dir + Program.tempDir + Path.GetFileName(url), spinner))
-            {
-                ConsoleTools.WriteResult(true);
-            }
-            else
-            {
-                //failed
-                ConsoleTools.WriteResult(false);
+            if (!DownloadLoader(url, spinner))
                 return false;
-            }
 
+            //perform the installation
+            Process fabric = new Process();
+            fabric.StartInfo.FileName = javaPath + "java";
+            fabric.StartInfo.Arguments = "-jar \"" + Program.dir + Program.tempDir + Path.GetFileName(url) + "\" client -mcversion " + minecraftVersion + " -loader" + loaderVersion + " -dir \"" + Program.minecraftDir + "\"";
+            fabric.StartInfo.WorkingDirectory = Program.dir + Program.tempDir;
 
-            string javaPath = "";
-            if (Program.DownloadJavaIfNotPresent())
-            {
-                javaPath = Program.dir + "/java/jdk-19/bin/";
-            }
+            fabric.StartInfo.RedirectStandardOutput = true;
+            fabric.StartInfo.RedirectStandardError = true;
+            fabric.StartInfo.RedirectStandardInput = true;
+            return RunLoaderInstaller(fabric, spinner, "Fabric");
 
-            try
-            {
-                //perform the installation
-                Process fabric = new Process();
-                fabric.StartInfo.FileName = javaPath + "java";
-                fabric.StartInfo.Arguments = "-jar \"" + Program.dir + Program.tempDir + Path.GetFileName(url) + "\" client -mcversion " + minecraftVersion + " -loader" + loaderVersion + " -dir \"" + Program.minecraftDir + "\"";
-                fabric.StartInfo.WorkingDirectory = Program.dir + Program.tempDir;
-
-                fabric.StartInfo.RedirectStandardOutput = true;
-                fabric.StartInfo.RedirectStandardError = true;
-                fabric.StartInfo.RedirectStandardInput = true;
-                fabric.Start();
-
-                Console.Write("Installing Fabric");
-                spinner.top = Console.CursorTop;
-
-                while (!fabric.HasExited) {
-                    spinner.Update();
-                    fabric.WaitForExit(100);
-                }
-
-                if (fabric.ExitCode != 0)
-                {
-                    //Console.WriteLine(quilt.StandardOutput.ReadToEnd());
-                    ConsoleTools.WriteResult(false);
-                    Console.WriteLine(fabric.StandardError.ReadToEnd());
-                    return false;
-                }
-            }
-            catch (Exception)
-            {
-                ConsoleTools.WriteResult(false);
-                ConsoleTools.WriteError("Installing Fabric failed - Is java installed?");
-                return false;
-            }
-
-            ConsoleTools.WriteResult(true);
-            return true;
         }
     }
 }
