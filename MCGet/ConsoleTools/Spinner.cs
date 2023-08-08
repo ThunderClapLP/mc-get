@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ConsoleTools
 {
-    public class Spinner
+    public class Spinner : AnimatableTool
     {
         public int left;
         public int top;
@@ -35,7 +35,7 @@ namespace ConsoleTools
             dockRight = true;
         }
 
-        public void Update()
+        public override void Update()
         {
             if (lastUpdate > Environment.TickCount64 - minSpinnerTime)
                 return;
