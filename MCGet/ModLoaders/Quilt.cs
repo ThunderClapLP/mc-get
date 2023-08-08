@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using ConsoleTools;
 
 namespace MCGet.ModLoaders
 {
@@ -17,7 +18,7 @@ namespace MCGet.ModLoaders
             if (loaderVersion == "" || minecraftVersion == "")
             {
                 //no version given
-                ConsoleTools.WriteError("Could not install Quilt");
+                CTools.WriteError("Could not install Quilt");
                 return false;
             }
 

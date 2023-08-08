@@ -13,6 +13,7 @@ using System.Text.Encodings.Web;
 using System.Web;
 using MCGet.Platforms;
 using System.Reflection;
+using ConsoleTools;
 
 namespace MCGet
 {
@@ -204,18 +205,18 @@ Examples:
                                     spinner.top = Console.CursorTop;
                                     if (!Networking.DownloadFile(urls[0], dir + archiveDir + Path.GetFileName(HttpUtility.UrlDecode(urls[0])), spinner))
                                     {
-                                        ConsoleTools.WriteResult(false);
+                                        CTools.WriteResult(false);
                                         Environment.Exit(0);
                                         return;
                                     }
 
                                     archPath = dir + archiveDir + Path.GetFileName(HttpUtility.UrlDecode(urls[0]));
-                                    ConsoleTools.WriteResult(true);
+                                    CTools.WriteResult(true);
                                 }
                                 else if (urls[0].Split("|")[0] == "mod")
                                 {
                                     //single mod
-                                    ConsoleTools.WriteError("Single mod:", 0);
+                                    CTools.WriteError("Single mod:", 0);
                                     Console.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(urls[0].Split("|").Last())));
                                     if (urls.Count > 1)
                                     {
@@ -225,9 +226,9 @@ Examples:
                                             Console.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(urls[i].Split("|").Last())));
                                         }
                                     }
-                                    ConsoleTools.WriteError("Compatible modloaders: " + urls[0].Split("|")[1], 0);
+                                    CTools.WriteError("Compatible modloaders: " + urls[0].Split("|")[1], 0);
                                     urls[0] = urls[0].Split("|").Last();
-                                    if (!ConsoleTools.ConfirmDialog("Install single mod", true))
+                                    if (!CTools.ConfirmDialog("Install single mod", true))
                                     {
                                         //user canceled
                                         Environment.Exit(0);
@@ -239,13 +240,13 @@ Examples:
                                     {
                                         if (!Networking.DownloadFile(urls[i], dir + tempDir + "mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), spinner))
                                         {
-                                            ConsoleTools.WriteResult(false);
+                                            CTools.WriteResult(false);
                                             Environment.Exit(0);
                                             return;
                                         }
                                     }
 
-                                    ConsoleTools.WriteResult(true);
+                                    CTools.WriteResult(true);
 
                                     //copy mod
 
@@ -258,13 +259,13 @@ Examples:
                                         }
                                         catch
                                         {
-                                            ConsoleTools.WriteResult(false);
+                                            CTools.WriteResult(false);
                                             Environment.Exit(0);
                                             return;
                                         }
                                     }
 
-                                    ConsoleTools.WriteResult(true);
+                                    CTools.WriteResult(true);
                                     Environment.Exit(0);
                                     return;
 
@@ -272,14 +273,14 @@ Examples:
                                 else
                                 {
                                     //unknown
-                                    ConsoleTools.WriteError("Unknown project type: " + urls[0].Split("|")[0]);
+                                    CTools.WriteError("Unknown project type: " + urls[0].Split("|")[0]);
                                     Environment.Exit(1);
                                     return;
                                 }
                             }
                             else
                             {
-                                ConsoleTools.WriteError("No project with slug or id '" + installName + "' was found" + (installGameVersion != "" ? (" for version " + installGameVersion) : ""));
+                                CTools.WriteError("No project with slug or id '" + installName + "' was found" + (installGameVersion != "" ? (" for version " + installGameVersion) : ""));
                                 Environment.Exit(1);
                                 return;
                             }
@@ -295,9 +296,9 @@ Examples:
 
                 Console.Write("Cleaning up");
                 if (backup.Clean())
-                    ConsoleTools.WriteResult(true);
+                    CTools.WriteResult(true);
                 else
-                    ConsoleTools.WriteResult(false);
+                    CTools.WriteResult(false);
 
                 if (archPath != "")
                     CopyArchive();
@@ -330,7 +331,7 @@ Examples:
             if (!platform.InstallDependencies())
             {
                 //ConsoleTools.WriteError("")
-                if (!ConsoleTools.ConfirmDialog("Modloader installation failed! Continue anyway?", false))
+                if (!CTools.ConfirmDialog("Modloader installation failed! Continue anyway?", false))
                 {
                     RevertChanges();
                     Environment.Exit(1);
@@ -359,9 +360,9 @@ Examples:
             }
             catch (Exception)
             {
-                ConsoleTools.WriteResult(false);
+                CTools.WriteResult(false);
             }
-            ConsoleTools.WriteResult(true);
+            CTools.WriteResult(true);
 
             Console.WriteLine();
             Console.Write("Installation successful!");
@@ -390,7 +391,7 @@ Examples:
             }
             catch (Exception)
             {
-                ConsoleTools.WriteError("Could not create temporary directories");
+                CTools.WriteError("Could not create temporary directories");
                 RevertChanges();
             }
 
@@ -404,7 +405,7 @@ Examples:
             {
                 if (cFixMissing)
                 {
-                    ConsoleTools.WriteError("Minecraft directory not found!");
+                    CTools.WriteError("Minecraft directory not found!");
                     Environment.Exit(0);
                 }
                 if (System.OperatingSystem.IsWindows())
@@ -428,7 +429,7 @@ Examples:
             {
                 if (!Directory.Exists(minecraftDir) || !Directory.Exists(minecraftDir + "/versions"))
                 {
-                    ConsoleTools.WriteError("Minecraft directory not found!");
+                    CTools.WriteError("Minecraft directory not found!");
 
                     if (cSilent || cFixMissing)
                         Environment.Exit(0);
@@ -440,7 +441,7 @@ Examples:
                     minecraftDir = Path.GetFullPath(minecraftDir);
                     Console.WriteLine("Minecraft Directory Found: " + minecraftDir);
                     if (!cFixMissing)
-                        confirmed = ConsoleTools.ConfirmDialog("Use this Directory?", true);
+                        confirmed = CTools.ConfirmDialog("Use this Directory?", true);
                     else
                         confirmed = true;
 
@@ -489,7 +490,7 @@ Examples:
         {
             if (!File.Exists(archPath))
             {
-                ConsoleTools.WriteError("Could not find archive '" + archPath + "'");
+                CTools.WriteError("Could not find archive '" + archPath + "'");
                 RevertChanges();
             }
 
@@ -497,11 +498,11 @@ Examples:
             try
             {
                 ZipFile.ExtractToDirectory(archPath, dir + tempDir + "archive/");
-                ConsoleTools.WriteResult(true);
+                CTools.WriteResult(true);
             }
             catch (Exception e)
             {
-                ConsoleTools.WriteResult(false);
+                CTools.WriteResult(false);
                 //Console.WriteLine(e.Message);
                 RevertChanges();
                 return;
@@ -519,7 +520,7 @@ Examples:
                 manifestPath = dir + tempDir + "archive/modrinth.index.json";
             } else
             {
-                ConsoleTools.WriteError("Could find manifest file");
+                CTools.WriteError("Could find manifest file");
                 RevertChanges();
                 return false;
             }
@@ -534,11 +535,11 @@ Examples:
             }
             catch (Exception)
             {
-                ConsoleTools.WriteResult(false);
+                CTools.WriteResult(false);
                 RevertChanges();
                 return false;
             }
-            ConsoleTools.WriteResult(true);
+            CTools.WriteResult(true);
 
             return true;
         }
@@ -580,13 +581,13 @@ Examples:
                     catch (Exception e)
                     {
                         Console.WriteLine(e.Message);
-                        ConsoleTools.WriteResult(false);
+                        CTools.WriteResult(false);
                         return false;
                     }
-                    ConsoleTools.WriteResult(true);
+                    CTools.WriteResult(true);
                     return true;
                 }
-                ConsoleTools.WriteResult(false);
+                CTools.WriteResult(false);
             }
 
             return false;
@@ -607,10 +608,10 @@ Examples:
 
                     if (!cFixMissing)
                     {
-                        ConsoleTools.WriteError("Mods directory is not empty.", 1);
+                        CTools.WriteError("Mods directory is not empty.", 1);
                         try
                         {
-                            if (ConsoleTools.ConfirmDialog("Delete ALL existing mods?", true))
+                            if (CTools.ConfirmDialog("Delete ALL existing mods?", true))
                             {
                                 if (Directory.Exists(modsDir))
                                     Directory.Delete(modsDir, true);
@@ -621,7 +622,7 @@ Examples:
                         }
                         catch (Exception)
                         {
-                            ConsoleTools.WriteError("Deletion failed");
+                            CTools.WriteError("Deletion failed");
                             RevertChanges();
                             return;
                         }
@@ -634,12 +635,12 @@ Examples:
         {
             if (Directory.Exists(dir + tempDir + "archive/overrides") && (Directory.GetDirectories(dir + tempDir + "archive/overrides").Length > 0 || Directory.GetFiles(dir + tempDir + "archive/overrides").Length > 0))
             {
-                ConsoleTools.WriteError("The modpack suggests custom configfiles.", 0);
-                if (!ConsoleTools.ConfirmDialog("Do you want to override these? (Recommended)", true))
+                CTools.WriteError("The modpack suggests custom configfiles.", 0);
+                if (!CTools.ConfirmDialog("Do you want to override these? (Recommended)", true))
                     return;
 
                 Console.Write("Configuring mods");
-                ProgressBar bar = new ProgressBar(0, ConsoleTools.DockRight());
+                ProgressBar bar = new ProgressBar(0, CTools.DockRight());
                 bar.fill = true;
                 try
                 {
@@ -648,11 +649,11 @@ Examples:
                 catch (Exception)
                 {
                     bar.Clear();
-                    ConsoleTools.WriteResult(false);
+                    CTools.WriteResult(false);
                     RevertChanges();
                 }
                 bar.Clear();
-                ConsoleTools.WriteResult(true);
+                CTools.WriteResult(true);
             }
         }
 
@@ -700,7 +701,7 @@ Examples:
 
             if (backup.log.installedMods.Count > 0 || backup.log.overrides.Count > 0)
             {
-                if (!ConsoleTools.ConfirmDialog("Restore previously saved backup?", true))
+                if (!CTools.ConfirmDialog("Restore previously saved backup?", true))
                     return;
 
                 Spinner spinner = new Spinner(Console.CursorTop);
@@ -716,16 +717,16 @@ Examples:
 
                 if (!backup.RestoreMods() || !backup.RestoreOverrides())
                 {
-                    ConsoleTools.WriteResult(false);
-                    ConsoleTools.WriteError("An error occured while restoring! Some files might be missing", 1);
-                    if (cRestore || !ConsoleTools.ConfirmDialog("Continue anyway?", true))
+                    CTools.WriteResult(false);
+                    CTools.WriteError("An error occured while restoring! Some files might be missing", 1);
+                    if (cRestore || !CTools.ConfirmDialog("Continue anyway?", true))
                     {
                         System.Environment.Exit(0);
                         return;
                     }
                 } else
                 {
-                    ConsoleTools.WriteResult(true);
+                    CTools.WriteResult(true);
                 }
 
                 backup.Clean();
@@ -736,15 +737,15 @@ Examples:
 
         public static void RevertChanges()
         {
-            ConsoleTools.WriteError("Failed to install");
+            CTools.WriteError("Failed to install");
             if (!cFixMissing)
             {
                 RestoreBackup();
                 Console.Write("Cleaning up");
                 if (backup.Clean())
-                    ConsoleTools.WriteResult(true);
+                    CTools.WriteResult(true);
                 else
-                    ConsoleTools.WriteResult(false);
+                    CTools.WriteResult(false);
             }
             System.Environment.Exit(1);
         }

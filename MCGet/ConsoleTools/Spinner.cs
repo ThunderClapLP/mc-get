@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MCGet
+namespace ConsoleTools
 {
     public class Spinner
     {
@@ -29,7 +29,7 @@ namespace MCGet
 
         public Spinner(int top)
         {
-            this.left = ConsoleTools.DockRight();
+            this.left = CTools.DockRight();
             this.top = top;
 
             dockRight = true;
@@ -72,7 +72,7 @@ namespace MCGet
             int prvTop = Console.CursorTop;
 
             Console.CursorVisible = false;
-            Console.CursorLeft = dockRight ? ConsoleTools.DockRight() - 1 : left;
+            Console.CursorLeft = dockRight ? CTools.DockRight() - 1 : left;
             Console.CursorTop = top;
 
 

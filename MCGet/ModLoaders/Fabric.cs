@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using ConsoleTools;
 
 namespace MCGet.ModLoaders
 {
@@ -19,7 +20,7 @@ namespace MCGet.ModLoaders
             if (loaderVersion == "" || minecraftVersion == "")
             {
                 //no version given
-                ConsoleTools.WriteError("Could not install fabric");
+                CTools.WriteError("Could not install fabric");
                 return false;
             }
 

@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using ConsoleTools;
 
 namespace MCGet.ModLoaders
 {
@@ -18,7 +19,7 @@ namespace MCGet.ModLoaders
         {
             if (loaderVersion == "" || minecraftVersion == "")
             {
-                ConsoleTools.WriteError("Could not install forge");
+                CTools.WriteError("Could not install forge");
                 return false;
             }
 
@@ -49,12 +50,12 @@ namespace MCGet.ModLoaders
             }
             catch (Exception)
             {
-                ConsoleTools.WriteResult(false);
-                ConsoleTools.WriteError("Installing Forge failed - Is java installed?");
+                CTools.WriteResult(false);
+                CTools.WriteError("Installing Forge failed - Is java installed?");
                 return false;
             }
 
-            ConsoleTools.WriteResult(true);
+            CTools.WriteResult(true);
 
             return true;
         }

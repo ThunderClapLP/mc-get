@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ConsoleTools;
 
 namespace MCGet.ModLoaders
 {
@@ -27,12 +28,12 @@ namespace MCGet.ModLoaders
 
             if (Networking.DownloadFile(url, Program.dir + Program.tempDir + Path.GetFileName(url), spinner))
             {
-                ConsoleTools.WriteResult(true);
+                CTools.WriteResult(true);
             }
             else
             {
                 //failed
-                ConsoleTools.WriteResult(false);
+                CTools.WriteResult(false);
                 return false;
             }
 
@@ -61,19 +62,19 @@ namespace MCGet.ModLoaders
                 if (proc.ExitCode != 0)
                 {
                     //Console.WriteLine(quilt.StandardOutput.ReadToEnd());
-                    ConsoleTools.WriteResult(false);
+                    CTools.WriteResult(false);
                     Console.WriteLine(proc.StandardError.ReadToEnd());
                     return false;
                 }
             }
             catch (Exception)
             {
-                ConsoleTools.WriteResult(false);
-                ConsoleTools.WriteError("Installing " + loaderName + " failed - Is java installed?");
+                CTools.WriteResult(false);
+                CTools.WriteError("Installing " + loaderName + " failed - Is java installed?");
                 return false;
             }
 
-            ConsoleTools.WriteResult(true);
+            CTools.WriteResult(true);
             return true;
         }
     }

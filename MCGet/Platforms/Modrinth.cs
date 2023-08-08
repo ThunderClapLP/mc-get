@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using ConsoleTools;
 
 namespace MCGet.Platforms
 {
@@ -23,7 +24,7 @@ namespace MCGet.Platforms
 
             if (Program.manifestDoc != null && Program.manifestDoc.RootElement.GetProperty("files").GetArrayLength() > 0)
             {
-                ProgressBar bar = new ProgressBar(0, ConsoleTools.DockRight());
+                ProgressBar bar = new ProgressBar(0, CTools.DockRight());
                 bar.fill = true;
                 bar.max = Program.manifestDoc.RootElement.GetProperty("files").GetArrayLength();
 
@@ -56,7 +57,7 @@ namespace MCGet.Platforms
                 long freeSpace = Math.Min(new DriveInfo(Program.dir).AvailableFreeSpace / 1024, new DriveInfo(Program.minecraftDir).AvailableFreeSpace / 1024);
 
                 if (requiredSpace > freeSpace - 10000) { //10MB buffer to prevent issues
-                    ConsoleTools.WriteError("Not enough disk space! " + Math.Max((requiredSpace - freeSpace - 10000) / 1024, 1) + " MB more requiered.");
+                    CTools.WriteError("Not enough disk space! " + Math.Max((requiredSpace - freeSpace - 10000) / 1024, 1) + " MB more requiered.");
                     Program.RevertChanges(); //cannot proceed
                     return false;
                 }
@@ -88,11 +89,11 @@ namespace MCGet.Platforms
                     catch (Exception) { }
                 }
 
-                ConsoleTools.ClearLine();
+                CTools.ClearLine();
                 Console.Write("Download finished!");
                 if (failedMods.Count > 0)
                 {
-                    if (!ConsoleTools.ConfirmDialog(" " + failedMods.Count + " / " + Program.manifestDoc.RootElement.GetProperty("files").GetArrayLength() + " mods failed. Continue?", true))
+                    if (!CTools.ConfirmDialog(" " + failedMods.Count + " / " + Program.manifestDoc.RootElement.GetProperty("files").GetArrayLength() + " mods failed. Continue?", true))
                     {
                         Program.RevertChanges();
                         return false;
@@ -111,16 +112,16 @@ namespace MCGet.Platforms
             spinner.top = Console.CursorTop;
 
             //parse download url
-            ConsoleTools.ClearLine();
+            CTools.ClearLine();
             Console.Write("Downloading " + Path.GetFileName(destinationPath));
 
             if (url == "" || !Networking.DownloadFile(url, destinationPath, spinner))
             {
-                ConsoleTools.WriteResult(false);
+                CTools.WriteResult(false);
                 return false;
             }
 
-            ConsoleTools.WriteResult(true);
+            CTools.WriteResult(true);
             return true;
         }
 
@@ -155,7 +156,7 @@ namespace MCGet.Platforms
 
             if (modloaderVersion == "" || modLoader == null)
             {
-                ConsoleTools.WriteError("Could not find a compatible modloader");
+                CTools.WriteError("Could not find a compatible modloader");
                 return false;
             }
 
@@ -167,7 +168,7 @@ namespace MCGet.Platforms
             string modsDir = Path.GetFullPath(Program.minecraftDir + "/mods");
 
             Console.Write("Copying mods");
-            ProgressBar bar = new ProgressBar(0, ConsoleTools.DockRight());
+            ProgressBar bar = new ProgressBar(0, CTools.DockRight());
             bar.fill = true;
             bar.max = downloadedMods.Count;
 
@@ -198,14 +199,14 @@ namespace MCGet.Platforms
             catch (Exception e)
             {
                 bar.Clear();
-                ConsoleTools.WriteResult(false);
+                CTools.WriteResult(false);
                 Console.WriteLine(e.Message);
                 Console.WriteLine(e.StackTrace);
                 Program.RevertChanges();
                 return false;
             }
             bar.Clear();
-            ConsoleTools.WriteResult(true);
+            CTools.WriteResult(true);
             return true;
         }
 
@@ -232,11 +233,11 @@ namespace MCGet.Platforms
                 {
                     if (e.InnerException?.Message.Contains("404") == true) //HACK: catch not found
                     {
-                        ConsoleTools.WriteResult(false);
+                        CTools.WriteResult(false);
                         return null;
                     }
-                    ConsoleTools.WriteResult(false);
-                    ConsoleTools.WriteError("Connection to Modrinth failed");
+                    CTools.WriteResult(false);
+                    CTools.WriteError("Connection to Modrinth failed");
                     Environment.Exit(1); //Exit here to prevent no project found message from showing. I know this is bad
                     return null;
                 }
@@ -245,7 +246,7 @@ namespace MCGet.Platforms
 
             if (!getTask.IsCompletedSuccessfully)
             {
-                ConsoleTools.WriteResult(false);
+                CTools.WriteResult(false);
                 return null;
             }
 
@@ -293,7 +294,7 @@ namespace MCGet.Platforms
 
             if (count == 0)
             {
-                ConsoleTools.WriteResult(false);
+                CTools.WriteResult(false);
                 Console.WriteLine("project not found");
                 return null;
             }
@@ -314,11 +315,11 @@ namespace MCGet.Platforms
                     {
                         if (e.InnerException?.Message.Contains("404") == true) //HACK: catch not found
                         {
-                            ConsoleTools.WriteResult(false);
+                            CTools.WriteResult(false);
                             return null;
                         }
-                        ConsoleTools.WriteResult(false);
-                        ConsoleTools.WriteError("Connection to Modrinth failed");
+                        CTools.WriteResult(false);
+                        CTools.WriteError("Connection to Modrinth failed");
                         Environment.Exit(1); //Exit here to prevent no project found message from showing. I know this is bad
                     }
                     spinner?.Update();
@@ -326,7 +327,7 @@ namespace MCGet.Platforms
 
                 if (!getTask.IsCompletedSuccessfully)
                 {
-                    ConsoleTools.WriteResult(false);
+                    CTools.WriteResult(false);
                     return null;
                 }
 
@@ -399,11 +400,11 @@ namespace MCGet.Platforms
 
                 if (resStr == "" && i == versionstring.Length - 1)
                 {
-                    ConsoleTools.WriteResult(false);
+                    CTools.WriteResult(false);
                 }
                 else if (result.Count > 0)
                 {
-                    ConsoleTools.WriteResult(true);
+                    CTools.WriteResult(true);
                     return result;
                 }
 
@@ -459,11 +460,11 @@ namespace MCGet.Platforms
 
             if (!response.IsCompletedSuccessfully)
             {
-                ConsoleTools.WriteResult(false);
+                CTools.WriteResult(false);
                 return;
             }
 
-            ConsoleTools.WriteResult(true);
+            CTools.WriteResult(true);
 
             JsonDocument json = JsonDocument.Parse(response.Result);
 

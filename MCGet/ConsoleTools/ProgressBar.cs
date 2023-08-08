@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MCGet
+namespace ConsoleTools
 {
     internal class ProgressBar
     {
@@ -52,7 +52,7 @@ namespace MCGet
             if (fill)
             {
                 left = 0;
-                width = ConsoleTools.DockRight();
+                width = CTools.DockRight();
             }
 
 
@@ -73,8 +73,8 @@ namespace MCGet
                     }
                     else
                     {
-                        Console.CursorTop = ConsoleTools.DockBottom(); //prvTop + 1;
-                        if (prvCurs.y >= ConsoleTools.DockBottom())
+                        Console.CursorTop = CTools.DockBottom(); //prvTop + 1;
+                        if (prvCurs.y >= CTools.DockBottom())
                         {
                             Console.WriteLine();//Console.CursorTop++;
                         }
@@ -86,7 +86,7 @@ namespace MCGet
                 }
                 else
                 {
-                    Console.CursorTop = ConsoleTools.DockBottom(); //prvTop + 1;
+                    Console.CursorTop = CTools.DockBottom(); //prvTop + 1;
                 }
 
             }

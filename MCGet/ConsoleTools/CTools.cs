@@ -5,11 +5,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MCGet
+namespace ConsoleTools
 {
-    public class ConsoleTools
+    public class CTools
     {
         public static int MaxWidth = 100;
+        public static bool SilentMode = false;
         public static void WriteResult(bool success)
         {
             ConsoleColor col = Console.BackgroundColor;
@@ -65,7 +66,7 @@ namespace MCGet
             {
                 Console.Write(prompt + " [" + (defaultRes?"Y":"y") + "/" + (defaultRes?"n":"N") + "]: ");
 
-                if (Program.cSilent)
+                if (SilentMode)
                 {
                     Console.WriteLine();
                     return defaultRes;

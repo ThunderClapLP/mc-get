@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using ConsoleTools;
 
 namespace MCGet.Platforms
 {
@@ -24,7 +25,7 @@ namespace MCGet.Platforms
 
             if (Program.manifestDoc != null && Program.manifestDoc.RootElement.GetProperty("files").GetArrayLength() > 0)
             {
-                ProgressBar bar = new ProgressBar(0, ConsoleTools.DockRight());
+                ProgressBar bar = new ProgressBar(0, CTools.DockRight());
                 bar.fill = true;
                 bar.max = Program.manifestDoc.RootElement.GetProperty("files").GetArrayLength();
 
@@ -89,11 +90,11 @@ namespace MCGet.Platforms
                     catch (Exception) { }
                 }
 
-                ConsoleTools.ClearLine();
+                CTools.ClearLine();
                 Console.Write("Download finished!");
                 if (failcount > 0)
                 {
-                    if (!ConsoleTools.ConfirmDialog(" " + failcount + " / " + Program.manifestDoc.RootElement.GetProperty("files").GetArrayLength() + " mods failed. Continue?", true))
+                    if (!CTools.ConfirmDialog(" " + failcount + " / " + Program.manifestDoc.RootElement.GetProperty("files").GetArrayLength() + " mods failed. Continue?", true))
                     {
                         Program.RevertChanges();
                     }
@@ -103,7 +104,7 @@ namespace MCGet.Platforms
             }
             else
             {
-                ConsoleTools.WriteError("Mainifest does not include any files");
+                CTools.WriteError("Mainifest does not include any files");
                 Program.RevertChanges();
                 return false;
             }
@@ -112,7 +113,7 @@ namespace MCGet.Platforms
 
         static bool DownloadMod(string projectId, string fileId, string destination, Spinner? spinner = null)
         {
-            ConsoleTools.ClearLine();
+            CTools.ClearLine();
             Console.WriteLine("CURSEFORGE DOWNLOAD IS PROHIBITED");
             return false;
         }
@@ -138,7 +139,7 @@ namespace MCGet.Platforms
 
             if (modloaderVersion == null)
             {
-                ConsoleTools.WriteError("Could not find a modloader");
+                CTools.WriteError("Could not find a modloader");
                 return false;
             }
 
@@ -147,7 +148,7 @@ namespace MCGet.Platforms
             else if (modloaderVersion.StartsWith("fabric"))
                 return new Fabric().Install(Program.manifestDoc?.RootElement.GetProperty("minecraft").GetProperty("version").GetString() ?? "", modloaderVersion);
 
-            ConsoleTools.WriteError("Modloader is not compatible");
+            CTools.WriteError("Modloader is not compatible");
             return false;
         }
 
@@ -165,16 +166,16 @@ namespace MCGet.Platforms
                 }
                 catch (Exception)
                 {
-                    ConsoleTools.WriteResult(false);
+                    CTools.WriteResult(false);
                     Program.RevertChanges();
                     return false;
                 }
-                ConsoleTools.WriteResult(true);
+                CTools.WriteResult(true);
             }
 
             //perform copy
             Console.Write("Copying mods");
-            ProgressBar bar = new ProgressBar(0, ConsoleTools.DockRight());
+            ProgressBar bar = new ProgressBar(0, CTools.DockRight());
             bar.fill = true;
             bar.max = Directory.GetFiles(Program.dir + Program.tempDir + "mods/").Length;
 
@@ -200,12 +201,12 @@ namespace MCGet.Platforms
             catch (Exception)
             {
                 bar.Clear();
-                ConsoleTools.WriteResult(false);
+                CTools.WriteResult(false);
                 Program.RevertChanges();
                 return false;
             }
             bar.Clear();
-            ConsoleTools.WriteResult(true);
+            CTools.WriteResult(true);
 
             return true;
         }
