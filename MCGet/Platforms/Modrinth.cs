@@ -384,10 +384,9 @@ namespace MCGet.Platforms
                     resStr = doc.RootElement.GetProperty("project_type") + "|" + loaderString + "|" + resStr;
 
                     result.Add(resStr);
-                    JsonElement dependencies;
-                    if (matchingElement?.TryGetProperty("dependencies", out dependencies) ?? false)
+                    if (matchingElement?.TryGetProperty("dependencies", out JsonElement dependencies) ?? false)
                     {
-                        foreach(JsonElement dep in dependencies.EnumerateArray())
+                        foreach (JsonElement dep in dependencies.EnumerateArray())
                         {
                             if (dep.GetProperty("dependency_type").ToString() == "required" && dep.GetProperty("version_id").ToString() != "")
                             {
