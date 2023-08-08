@@ -302,7 +302,7 @@ namespace MCGet.Platforms
             //get all versions
             for (int i = 0; i < versionstring.Length && versionstring[i].Length > 3; i++)
             {
-                getTask = client.GetStringAsync("https://api.modrinth.com/v2/versions?ids=" + versionstring[i]);
+                getTask = client.GetStringAsync(url + "/versions?ids=" + versionstring[i]);
 
                 while (!getTask.IsCompleted)
                 {
