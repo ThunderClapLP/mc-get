@@ -273,14 +273,14 @@ Examples:
                                 {
                                     //unknown
                                     ConsoleTools.WriteError("Unknown project type: " + urls[0].Split("|")[0]);
-                                    Environment.Exit(0);
+                                    Environment.Exit(1);
                                     return;
                                 }
                             }
                             else
                             {
                                 ConsoleTools.WriteError("No project with slug or id '" + installName + "' was found" + (installGameVersion != "" ? (" for version " + installGameVersion) : ""));
-                                Environment.Exit(0);
+                                Environment.Exit(1);
                                 return;
                             }
                         }
@@ -487,15 +487,22 @@ Examples:
 
         static void ExtractArchive()
         {
+            if (!File.Exists(archPath))
+            {
+                ConsoleTools.WriteError("Could not find archive '" + archPath + "'");
+                RevertChanges();
+            }
+
             Console.Write("Extracting: " + Path.GetFileName(archPath));
             try
             {
                 ZipFile.ExtractToDirectory(archPath, dir + tempDir + "archive/");
                 ConsoleTools.WriteResult(true);
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 ConsoleTools.WriteResult(false);
+                //Console.WriteLine(e.Message);
                 RevertChanges();
                 return;
             }
