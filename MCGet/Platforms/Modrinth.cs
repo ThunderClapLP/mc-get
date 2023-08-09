@@ -140,7 +140,7 @@ namespace MCGet.Platforms
                         modloaderVersion = "fabric-" + loader.GetString();
                         modLoader = new Fabric();
                     }
-                    else if (Program.manifestDoc.RootElement.GetProperty("dependencies").TryGetProperty(Encoding.UTF8.GetBytes("forge-loader"), out loader))
+                    else if (Program.manifestDoc.RootElement.GetProperty("dependencies").TryGetProperty(Encoding.UTF8.GetBytes("forge"), out loader))
                     {
                         modloaderVersion = "forge-" + loader.GetString();
                         modLoader = new Forge();

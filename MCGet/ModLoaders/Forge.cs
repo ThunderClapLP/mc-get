@@ -24,6 +24,13 @@ namespace MCGet.ModLoaders
             }
 
             loaderVersion = loaderVersion.Replace("forge-", "");
+            //catch case that the forge version is already complete
+            if (loaderVersion.Contains("-"))
+            {
+                minecraftVersion = loaderVersion.Split("-")[0];
+                loaderVersion = loaderVersion.Split("-")[1];
+            }
+
             string forgeFullUrl = url.Replace("{VERSION}", minecraftVersion).Replace("{FORGE_VERSION}", loaderVersion);
             Spinner spinner = new Spinner(CTools.CursorTop);
 
