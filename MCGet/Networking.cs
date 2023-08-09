@@ -23,24 +23,19 @@ namespace MCGet
             }
             Task<Stream> streamTask = client.GetStreamAsync(url);
 
-            spinner?.Draw();
-            while (!streamTask.IsCompleted)
-            {
-                try
-                {
-                    streamTask.Wait(100);
-                }
-                catch (System.AggregateException)
-                {
-                    break; //catch network errors
-                }
-                spinner?.Update();
-            }
 
-            if (!streamTask.IsCompletedSuccessfully)
+            spinner?.StartAnimation();
+            try
             {
+                streamTask.Wait();
+            }
+            catch (System.AggregateException e)
+            {
+                CTools.WriteLine(e.Message);
+                spinner?.StopAnimation();
                 return false;
             }
+            spinner?.StopAnimation();
 
             //create directory if needed
             if (Path.GetDirectoryName(targetPath) != null && !Directory.Exists(Path.GetDirectoryName(targetPath))) {
@@ -55,25 +50,17 @@ namespace MCGet
             using FileStream fs = new FileStream(targetPath, FileMode.OpenOrCreate);
             Task copyTask = streamTask.Result.CopyToAsync(fs);
 
-            spinner?.Draw();
-            while (!copyTask.IsCompleted)
+            spinner?.StartAnimation();
+            try
             {
-                try
-                {
-                    copyTask.Wait(100);
-                }
-                catch (System.AggregateException)
-                {
-                    break; //catch file system errors
-                    //TODO: handle disk full seperatly (Abort all downloads). Maybe an enum as return type
-                }
-                spinner?.Update();
+                copyTask.Wait();
             }
-
-            if (!copyTask.IsCompletedSuccessfully)
+            catch (System.AggregateException)
             {
                 return false;
+                //TODO: handle disk full seperatly (Abort all downloads). Maybe an enum as return type
             }
+            spinner?.StopAnimation();
 
             return true;
         }

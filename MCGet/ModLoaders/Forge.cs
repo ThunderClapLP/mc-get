@@ -25,7 +25,7 @@ namespace MCGet.ModLoaders
 
             loaderVersion = loaderVersion.Replace("forge-", "");
             string forgeFullUrl = url.Replace("{VERSION}", minecraftVersion).Replace("{FORGE_VERSION}", loaderVersion);
-            Spinner spinner = new Spinner(Console.CursorTop);
+            Spinner spinner = new Spinner(CTools.CursorTop);
 
             if (!DownloadLoader(forgeFullUrl, spinner))
                 return false;
@@ -44,7 +44,7 @@ namespace MCGet.ModLoaders
                 //forge.StartInfo.RedirectStandardInput = true;
                 forge.Start();
 
-                Console.Write("Please follow the instructions of the forge Installer");
+                CTools.Write("Please follow the instructions of the forge Installer");
 
                 forge.WaitForExit();
             }

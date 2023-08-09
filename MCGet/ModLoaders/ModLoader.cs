@@ -16,13 +16,13 @@ namespace MCGet.ModLoaders
 
         public bool DownloadLoader(String url, Spinner spinner) {
 
-            Console.CursorLeft = 0;
-            Console.WriteLine("");
-            Console.CursorTop -= 1;
+            CTools.CursorLeft = 0;
+            CTools.WriteLine("");
+            CTools.CursorTop -= 1;
 
-            spinner.top = Console.CursorTop;
+            spinner.top = CTools.CursorTop;
 
-            Console.Write("Downloading " + Path.GetFileName(url) + " ");
+            CTools.Write("Downloading " + Path.GetFileName(url) + " ");
 
             spinner.Update();
 
@@ -51,8 +51,8 @@ namespace MCGet.ModLoaders
                 //perform the installation
                 proc.Start();
 
-                Console.Write("Installing " + loaderName);
-                spinner.top = Console.CursorTop;
+                CTools.Write("Installing " + loaderName);
+                spinner.top = CTools.CursorTop;
 
                 while (!proc.HasExited) {
                     spinner.Update();
@@ -63,7 +63,7 @@ namespace MCGet.ModLoaders
                 {
                     //Console.WriteLine(quilt.StandardOutput.ReadToEnd());
                     CTools.WriteResult(false);
-                    Console.WriteLine(proc.StandardError.ReadToEnd());
+                    CTools.WriteLine(proc.StandardError.ReadToEnd());
                     return false;
                 }
             }

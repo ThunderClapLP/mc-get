@@ -23,7 +23,7 @@ namespace MCGet.ModLoaders
             }
 
             loaderVersion = loaderVersion.Replace("quilt-", ""); //make sure version has the correct format
-            Spinner spinner = new Spinner(Console.CursorTop);
+            Spinner spinner = new Spinner(CTools.CursorTop);
 
             if (!DownloadLoader(url, spinner))
                 return false;

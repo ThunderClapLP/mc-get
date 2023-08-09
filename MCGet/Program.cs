@@ -59,7 +59,7 @@ namespace MCGet
                         break;
                     case "-h":
                     case "--help":
-                        Console.WriteLine(@"
+                        CTools.WriteLine(@"
 Usage: 
     {ExecutableName} (flags) <archivepath>
     {ExecutableName} (flags) <command> (parameters)
@@ -97,7 +97,7 @@ Examples:
                         break;
                     case "-v":
                     case "--version":
-                        Console.WriteLine(Assembly.GetExecutingAssembly().GetName().Name + " Version " + Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "unknown");
+                        CTools.WriteLine(Assembly.GetExecutingAssembly().GetName().Name + " Version " + Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "unknown");
                         Environment.Exit(0);
                         break;
                     case "install":
@@ -131,10 +131,10 @@ Examples:
 
             if (invalidArgs || args.Length <= 0)
             {
-                Console.WriteLine("Usage: " + Assembly.GetExecutingAssembly().GetName().Name + " (<archivepath> | install <slug>)\n --help for all arguments");
+                CTools.WriteLine("Usage: " + Assembly.GetExecutingAssembly().GetName().Name + " (<archivepath> | install <slug>)\n --help for all arguments");
                 if (OperatingSystem.IsWindows())
                 {
-                    Console.Write("Press any key to exit");
+                    CTools.Write("Press any key to exit");
                     Console.ReadKey();
                 }
                 Environment.Exit(0);
@@ -161,18 +161,18 @@ Examples:
                 if (cRestore)
                 {
                     RestoreBackup();
-                    Console.WriteLine();
-                    Console.WriteLine("Success!");
+                    CTools.WriteLine();
+                    CTools.WriteLine("Success!");
                     if (OperatingSystem.IsWindows())
                     {
-                        Console.Write(" Press any key to exit");
+                        CTools.Write(" Press any key to exit");
                         Console.ReadKey();
                     }
                     Environment.Exit(0);
                     return;
                 }
 
-                Spinner spinner = new Spinner(Console.CursorTop);
+                Spinner spinner = new Spinner(CTools.CursorTop);
                 spinner.Update();
                 switch(command)
                 {
@@ -201,8 +201,8 @@ Examples:
                                 {
                                     //modpack
                                     urls[0] = urls[0].Split("|").Last(); //delete modloaders
-                                    Console.Write("Downloading manifest file");
-                                    spinner.top = Console.CursorTop;
+                                    CTools.Write("Downloading manifest file");
+                                    spinner.top = CTools.CursorTop;
                                     if (!Networking.DownloadFile(urls[0], dir + archiveDir + Path.GetFileName(HttpUtility.UrlDecode(urls[0])), spinner))
                                     {
                                         CTools.WriteResult(false);
@@ -217,13 +217,13 @@ Examples:
                                 {
                                     //single mod
                                     CTools.WriteError("Single mod:", 0);
-                                    Console.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(urls[0].Split("|").Last())));
+                                    CTools.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(urls[0].Split("|").Last())));
                                     if (urls.Count > 1)
                                     {
-                                        Console.WriteLine("With dependencies:");
+                                        CTools.WriteLine("With dependencies:");
                                         for (int i = 1; i < urls.Count; i++)
                                         {
-                                            Console.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(urls[i].Split("|").Last())));
+                                            CTools.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(urls[i].Split("|").Last())));
                                         }
                                     }
                                     CTools.WriteError("Compatible modloaders: " + urls[0].Split("|")[1], 0);
@@ -234,8 +234,8 @@ Examples:
                                         Environment.Exit(0);
                                         return;
                                     }
-                                    Console.Write("Downloading single mod");
-                                    spinner.top = Console.CursorTop;
+                                    CTools.Write("Downloading single mod");
+                                    spinner.top = CTools.CursorTop;
                                     for (int i = 0; i < urls.Count; i++)
                                     {
                                         if (!Networking.DownloadFile(urls[i], dir + tempDir + "mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), spinner))
@@ -250,7 +250,7 @@ Examples:
 
                                     //copy mod
 
-                                    Console.Write("Copy mod");
+                                    CTools.Write("Copy mod");
                                     for (int i = 0; i < urls.Count; i++)
                                     {
                                         try
@@ -294,7 +294,7 @@ Examples:
 
                 RestoreBackup();
 
-                Console.Write("Cleaning up");
+                CTools.Write("Cleaning up");
                 if (backup.Clean())
                     CTools.WriteResult(true);
                 else
@@ -352,7 +352,7 @@ Examples:
 
             backup.Save();
 
-            Console.Write("Cleaning up");
+            CTools.Write("Cleaning up");
             try
             {
                 if (Directory.Exists(dir + tempDir))
@@ -364,16 +364,16 @@ Examples:
             }
             CTools.WriteResult(true);
 
-            Console.WriteLine();
-            Console.Write("Installation successful!");
+            CTools.WriteLine();
+            CTools.Write("Installation successful!");
             if (OperatingSystem.IsWindows())
             {
-                Console.Write(" Press any key to exit");
+                CTools.Write(" Press any key to exit");
                 Console.ReadKey();
             }
             else
             {
-                Console.WriteLine();
+                CTools.WriteLine();
             }
 
 
@@ -439,7 +439,7 @@ Examples:
                 else
                 {
                     minecraftDir = Path.GetFullPath(minecraftDir);
-                    Console.WriteLine("Minecraft Directory Found: " + minecraftDir);
+                    CTools.WriteLine("Minecraft Directory Found: " + minecraftDir);
                     if (!cFixMissing)
                         confirmed = CTools.ConfirmDialog("Use this Directory?", true);
                     else
@@ -448,7 +448,7 @@ Examples:
                 }
                 if (!confirmed)
                 {
-                    Console.Write("Enter Minecraft Path: ");
+                    CTools.Write("Enter Minecraft Path: ");
                     minecraftDir = Console.ReadLine() + "";
                     if (minecraftDir != null && minecraftDir != "")
                         minecraftDir = Path.GetFullPath(minecraftDir);
@@ -494,7 +494,7 @@ Examples:
                 RevertChanges();
             }
 
-            Console.Write("Extracting: " + Path.GetFileName(archPath));
+            CTools.Write("Extracting: " + Path.GetFileName(archPath));
             try
             {
                 ZipFile.ExtractToDirectory(archPath, dir + tempDir + "archive/");
@@ -525,7 +525,7 @@ Examples:
                 return false;
             }
 
-            Console.Write("Loading manifest.json");
+            CTools.Write("Loading manifest.json");
 
             try
             {
@@ -566,8 +566,8 @@ Examples:
             }
             catch (Exception)
             {
-                Console.Write("Downloading Java");
-                Spinner spinner = new Spinner(Console.CursorTop);
+                CTools.Write("Downloading Java");
+                Spinner spinner = new Spinner(CTools.CursorTop);
                 if (Networking.DownloadFile("https://download.java.net/java/GA/jdk19/877d6127e982470ba2a7faa31cc93d04/36/GPL/openjdk-19_windows-x64_bin.zip", dir + tempDir + "java.zip", spinner))
                 {
                     try
@@ -580,7 +580,7 @@ Examples:
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine(e.Message);
+                        CTools.WriteLine(e.Message);
                         CTools.WriteResult(false);
                         return false;
                     }
@@ -639,7 +639,7 @@ Examples:
                 if (!CTools.ConfirmDialog("Do you want to override these? (Recommended)", true))
                     return;
 
-                Console.Write("Configuring mods");
+                CTools.Write("Configuring mods");
                 ProgressBar bar = new ProgressBar(0, CTools.DockRight());
                 bar.fill = true;
                 try
@@ -704,10 +704,10 @@ Examples:
                 if (!CTools.ConfirmDialog("Restore previously saved backup?", true))
                     return;
 
-                Spinner spinner = new Spinner(Console.CursorTop);
+                Spinner spinner = new Spinner(CTools.CursorTop);
                 //spinner.minSpinnerTime = 150;
-                spinner.top = Console.CursorTop;
-                Console.Write("Restoring Backups");
+                spinner.top = CTools.CursorTop;
+                CTools.Write("Restoring Backups");
 
 
                 backup.updateProgress += (int progress) =>
@@ -741,7 +741,7 @@ Examples:
             if (!cFixMissing)
             {
                 RestoreBackup();
-                Console.Write("Cleaning up");
+                CTools.Write("Cleaning up");
                 if (backup.Clean())
                     CTools.WriteResult(true);
                 else

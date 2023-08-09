@@ -28,7 +28,7 @@ namespace MCGet.Platforms
                 bar.fill = true;
                 bar.max = Program.manifestDoc.RootElement.GetProperty("files").GetArrayLength();
 
-                Spinner spinner = new Spinner(Console.CursorTop);
+                Spinner spinner = new Spinner(CTools.CursorTop);
 
                 //get all mods and calculate required disk space in kilobytes
                 long requiredSpace = 0;
@@ -90,7 +90,7 @@ namespace MCGet.Platforms
                 }
 
                 CTools.ClearLine();
-                Console.Write("Download finished!");
+                CTools.Write("Download finished!");
                 if (failedMods.Count > 0)
                 {
                     if (!CTools.ConfirmDialog(" " + failedMods.Count + " / " + Program.manifestDoc.RootElement.GetProperty("files").GetArrayLength() + " mods failed. Continue?", true))
@@ -99,7 +99,7 @@ namespace MCGet.Platforms
                         return false;
                     }
                 }
-                Console.WriteLine();
+                CTools.WriteLine();
             }
 
             return true;
@@ -108,12 +108,12 @@ namespace MCGet.Platforms
         public bool DownloadMod(string url, string destinationPath, Spinner? spinner = null)
         {
             if (spinner == null)
-                spinner = new Spinner(Console.CursorTop);
-            spinner.top = Console.CursorTop;
+                spinner = new Spinner(CTools.CursorTop);
+            spinner.top = CTools.CursorTop;
 
             //parse download url
             CTools.ClearLine();
-            Console.Write("Downloading " + Path.GetFileName(destinationPath));
+            CTools.Write("Downloading " + Path.GetFileName(destinationPath));
 
             if (url == "" || !Networking.DownloadFile(url, destinationPath, spinner))
             {
@@ -167,7 +167,7 @@ namespace MCGet.Platforms
         {
             string modsDir = Path.GetFullPath(Program.minecraftDir + "/mods");
 
-            Console.Write("Copying mods");
+            CTools.Write("Copying mods");
             ProgressBar bar = new ProgressBar(0, CTools.DockRight());
             bar.fill = true;
             bar.max = downloadedMods.Count;
@@ -200,8 +200,8 @@ namespace MCGet.Platforms
             {
                 bar.Clear();
                 CTools.WriteResult(false);
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
+                CTools.WriteLine(e.Message);
+                CTools.WriteLine(e.StackTrace);
                 Program.RevertChanges();
                 return false;
             }
@@ -216,39 +216,32 @@ namespace MCGet.Platforms
             HttpClient client = new HttpClient();
             client.DefaultRequestHeaders.UserAgent.ParseAdd(Program.api_user_agent);
 
-            Console.Write("Getting project info");
+            CTools.Write("Getting project info");
 
             //get mod
             Task<string> getTask = client.GetStringAsync(url + "/project/" + name);
 
             //wait for completion
-            while (!getTask.IsCompleted)
+            spinner?.StartAnimation();
+            try
             {
-                //HACK: This solution is really bad. Will be replaced soon with a propper single wait and a dynamic updater for spinner
-                try
+                getTask.Wait();
+            }
+            catch (AggregateException e)
+            {
+                spinner?.StopAnimation();
+
+                if (e.InnerException?.Message.Contains("404") == true) //HACK: catch project not found
                 {
-                    getTask.Wait(100);
-                }
-                catch (AggregateException e)
-                {
-                    if (e.InnerException?.Message.Contains("404") == true) //HACK: catch not found
-                    {
-                        CTools.WriteResult(false);
-                        return null;
-                    }
                     CTools.WriteResult(false);
-                    CTools.WriteError("Connection to Modrinth failed");
-                    Environment.Exit(1); //Exit here to prevent no project found message from showing. I know this is bad
                     return null;
                 }
-                spinner?.Update();
-            }
-
-            if (!getTask.IsCompletedSuccessfully)
-            {
                 CTools.WriteResult(false);
+                CTools.WriteError("Connection to Modrinth failed");
+                Environment.Exit(1); //Exit here to prevent no project found message from showing. I know this is bad
                 return null;
             }
+            spinner?.StopAnimation();
 
             JsonDocument doc = JsonDocument.Parse(getTask.Result);
 
@@ -295,7 +288,7 @@ namespace MCGet.Platforms
             if (count == 0)
             {
                 CTools.WriteResult(false);
-                Console.WriteLine("project not found");
+                CTools.WriteLine("project not found");
                 return null;
             }
 
@@ -304,32 +297,26 @@ namespace MCGet.Platforms
             {
                 getTask = client.GetStringAsync(url + "/versions?ids=" + versionstring[i]);
 
-                while (!getTask.IsCompleted)
+                spinner?.StartAnimation();
+                try
                 {
-                    //HACK: This solution is really bad. Will be replaced soon with a propper single wait and a dynamic updater for spinner
-                    try
-                    {
-                        getTask.Wait(100);
-                    }
-                    catch (AggregateException e)
-                    {
-                        if (e.InnerException?.Message.Contains("404") == true) //HACK: catch not found
-                        {
-                            CTools.WriteResult(false);
-                            return null;
-                        }
-                        CTools.WriteResult(false);
-                        CTools.WriteError("Connection to Modrinth failed");
-                        Environment.Exit(1); //Exit here to prevent no project found message from showing. I know this is bad
-                    }
-                    spinner?.Update();
+                    getTask.Wait();
                 }
-
-                if (!getTask.IsCompletedSuccessfully)
+                catch (AggregateException e)
                 {
+                    spinner?.StopAnimation();
+
+                    if (e.InnerException?.Message.Contains("404") == true) //HACK: catch project not found
+                    {
+                        CTools.WriteResult(false);
+                        return null;
+                    }
                     CTools.WriteResult(false);
+                    CTools.WriteError("Connection to Modrinth failed");
+                    Environment.Exit(1); //Exit here to prevent no project found message from showing. I know this is bad
                     return null;
                 }
+                spinner?.StopAnimation();
 
                 //Console.WriteLine(getTask.Result);
 
@@ -373,6 +360,7 @@ namespace MCGet.Platforms
                 string resStr = matchingElement?.GetProperty("files").EnumerateArray().First().GetProperty("url").ToString() ?? "";
 
                 //get dependencies
+                spinner?.StartAnimation();
                 if (matchingElement != null)
                 {
                     string loaderString = "";
@@ -396,6 +384,7 @@ namespace MCGet.Platforms
                         }
                     }
                 }
+                spinner?.StopAnimation();
 
                 if (resStr == "" && i == versionstring.Length - 1)
                 {
@@ -418,50 +407,40 @@ namespace MCGet.Platforms
             client.DefaultRequestHeaders.UserAgent.ParseAdd(Program.api_user_agent);
             Task<string> getTask = client.GetStringAsync(url + "/version/" + version);
 
-            //I don't know why the spinner is not updated here. But anyway a single wait is enough in this case.
+            //spinner is handled in calling function
             try
             {
-                getTask.Wait(10000);
+                getTask.Wait();
             }
             catch (System.Exception)
             {
                 return "";
             }
 
-            if (!getTask.IsCompletedSuccessfully)
-            {
-                return "";
-            }
             return JsonDocument.Parse(getTask.Result).RootElement.GetProperty("files").EnumerateArray().First().GetProperty("url").ToString() ?? "";
         }
 
         public static void SearchForProjects(string search, Spinner? spinner = null)
         {
-            Console.Write("Searching for projects");
+            CTools.Write("Searching for projects");
 
             HttpClient client = new HttpClient();
             client.DefaultRequestHeaders.UserAgent.ParseAdd(Program.api_user_agent);
 
             Task<string> response = client.GetStringAsync(url + "/search?query=" + HttpUtility.UrlEncode(search));
 
-            while (!response.IsCompleted)
+            spinner?.StartAnimation();
+            try
             {
-                try
-                {
-                    response.Wait(100);
-                }
-                catch (AggregateException)
-                {
-                    break; //catch network errors
-                }
-                spinner?.Update();
+                response.Wait();
             }
-
-            if (!response.IsCompletedSuccessfully)
+            catch (AggregateException) //catch network errors
             {
+                spinner?.StopAnimation();
                 CTools.WriteResult(false);
-                return;
+                return; 
             }
+            spinner?.StopAnimation();
 
             CTools.WriteResult(true);
 
@@ -469,7 +448,7 @@ namespace MCGet.Platforms
 
             foreach (JsonElement project in json.RootElement.GetProperty("hits").EnumerateArray())
             {
-                Console.WriteLine(project.GetProperty("project_type") + ": " + project.GetProperty("slug") + " (" + project.GetProperty("title") + ")");
+                CTools.WriteLine(project.GetProperty("project_type") + ": " + project.GetProperty("slug") + " (" + project.GetProperty("title") + ")");
             }
         }
     }

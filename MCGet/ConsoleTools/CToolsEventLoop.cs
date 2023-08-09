@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ConsoleTools
@@ -23,9 +24,11 @@ namespace ConsoleTools
 
         private static async Task EventLoopAsync()
         {
-            while (eventLoopRunning) {
+            while (eventLoopRunning)
+            {
                 await Task.Delay(100);
-                foreach (AnimatableTool tool in animatableTools) {
+                foreach (AnimatableTool tool in animatableTools)
+                {
                     tool.Update(); //not thread safe, but should do for the moment
                 }
             }

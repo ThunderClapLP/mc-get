@@ -29,7 +29,7 @@ namespace MCGet.Platforms
                 bar.fill = true;
                 bar.max = Program.manifestDoc.RootElement.GetProperty("files").GetArrayLength();
 
-                Spinner spinner = new Spinner(Console.CursorTop);
+                Spinner spinner = new Spinner(CTools.CursorTop);
 
                 int failcount = 0;
                 while ((tryCount < 4 && failcount > 0) || tryCount == 0)
@@ -40,7 +40,7 @@ namespace MCGet.Platforms
                         bar.max = failedMods.Count;
                         bar.Update();
 
-                        Console.Write("Retrying failed Mods. (Try " + tryCount + " / " + "3)");
+                        CTools.Write("Retrying failed Mods. (Try " + tryCount + " / " + "3)");
 
                         bar.Update();
 
@@ -52,7 +52,7 @@ namespace MCGet.Platforms
                         }
 
                         spinner.Clean();
-                        Console.WriteLine();
+                        CTools.WriteLine();
                         bar.Update();
                     }
 
@@ -91,7 +91,7 @@ namespace MCGet.Platforms
                 }
 
                 CTools.ClearLine();
-                Console.Write("Download finished!");
+                CTools.Write("Download finished!");
                 if (failcount > 0)
                 {
                     if (!CTools.ConfirmDialog(" " + failcount + " / " + Program.manifestDoc.RootElement.GetProperty("files").GetArrayLength() + " mods failed. Continue?", true))
@@ -99,7 +99,7 @@ namespace MCGet.Platforms
                         Program.RevertChanges();
                     }
                 }
-                Console.WriteLine();
+                CTools.WriteLine();
 
             }
             else
@@ -114,7 +114,7 @@ namespace MCGet.Platforms
         static bool DownloadMod(string projectId, string fileId, string destination, Spinner? spinner = null)
         {
             CTools.ClearLine();
-            Console.WriteLine("CURSEFORGE DOWNLOAD IS PROHIBITED");
+            CTools.WriteLine("CURSEFORGE DOWNLOAD IS PROHIBITED");
             return false;
         }
 
@@ -159,7 +159,7 @@ namespace MCGet.Platforms
 
             if (!Directory.Exists(modsDir))
             {
-                Console.Write("Creating mods directory");
+                CTools.Write("Creating mods directory");
                 try
                 {
                     Directory.CreateDirectory(modsDir);
@@ -174,7 +174,7 @@ namespace MCGet.Platforms
             }
 
             //perform copy
-            Console.Write("Copying mods");
+            CTools.Write("Copying mods");
             ProgressBar bar = new ProgressBar(0, CTools.DockRight());
             bar.fill = true;
             bar.max = Directory.GetFiles(Program.dir + Program.tempDir + "mods/").Length;

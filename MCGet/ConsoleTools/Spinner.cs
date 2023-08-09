@@ -67,22 +67,25 @@ namespace ConsoleTools
 
         public void Draw()
         {
-            bool prvVisible = OperatingSystem.IsWindows() ? Console.CursorVisible : true;
-            int prvLeft = Console.CursorLeft;
-            int prvTop = Console.CursorTop;
+            lock(CTools.ConsoleLock)
+            {
+                bool prvVisible = OperatingSystem.IsWindows() ? Console.CursorVisible : true;
+                int prvLeft = Console.CursorLeft;
+                int prvTop = Console.CursorTop;
 
-            Console.CursorVisible = false;
-            Console.CursorLeft = dockRight ? CTools.DockRight() - 1 : left;
-            Console.CursorTop = top;
+                Console.CursorVisible = false;
+                Console.CursorLeft = dockRight ? CTools.DockRight() - 1 : left;
+                Console.CursorTop = top;
 
 
-            Console.ForegroundColor = ConsoleColor.Blue;
-            Console.Write(curr);
-            Console.ResetColor();
+                Console.ForegroundColor = ConsoleColor.Blue;
+                Console.Write(curr);
+                Console.ResetColor();
 
-            Console.CursorLeft = prvLeft;
-            Console.CursorTop = prvTop;
-            Console.CursorVisible = prvVisible;
+                Console.CursorLeft = prvLeft;
+                Console.CursorTop = prvTop;
+                Console.CursorVisible = prvVisible;
+            }
 
         }
 
