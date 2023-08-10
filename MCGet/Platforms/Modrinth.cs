@@ -159,8 +159,28 @@ namespace MCGet.Platforms
                 CTools.WriteError("Could not find a compatible modloader");
                 return false;
             }
+            
+            ProfileHandler ph = new ProfileHandler();
+            ph.CreateSnapshot(Program.minecraftDir + "/launcher_profiles.json", ProfileHandler.SnapshotNumber.FIRST);
 
-            return modLoader?.Install(Program.manifestDoc?.RootElement.GetProperty("dependencies").GetProperty("minecraft").GetString() ?? "", modloaderVersion) ?? false;
+            bool success = modLoader?.Install(Program.manifestDoc?.RootElement.GetProperty("dependencies").GetProperty("minecraft").GetString() ?? "", modloaderVersion) ?? false;
+            
+            ph.CreateSnapshot(Program.minecraftDir + "/launcher_profiles.json", ProfileHandler.SnapshotNumber.SECOND);
+
+            //Get new profile by comparing the profile list from befor with the one from after the modloader install. Does nothing if the modloarder profile already existed befor
+            string newProfile = ph.ComputeDifference().FirstOrDefault() ?? "";
+            if (newProfile != "")
+            {
+                //no error checks at the moment
+                ph.LoadProfiles(Program.minecraftDir + "/launcher_profiles.json");
+                ph.SetProfileName(newProfile, Program.manifestDoc?.RootElement.GetOrNull("name").ToString() ?? "unknown"); //use modpack name as profile name
+                string newId = newProfile + "-" + new Random().Next(0, 10000);
+                ph.SetProfieId(newProfile, newId);
+                ph.SaveProfiles(Program.minecraftDir + "/launcher_profiles.json");
+                Program.backup.log.modloaderProfile = newId;
+            }
+
+            return success;
         }
 
         public override bool InstallMods()

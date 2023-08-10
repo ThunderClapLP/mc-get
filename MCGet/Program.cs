@@ -709,6 +709,8 @@ Examples:
                 spinner.top = CTools.CursorTop;
                 CTools.Write("Restoring Backups");
 
+                //delete automatically added launcher profile
+                backup.DeleteLauncherProfile();
 
                 backup.updateProgress += (int progress) =>
                 {
