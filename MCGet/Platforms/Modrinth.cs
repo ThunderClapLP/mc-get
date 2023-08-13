@@ -167,7 +167,7 @@ namespace MCGet.Platforms
             
             ph.CreateSnapshot(Program.minecraftDir + "/launcher_profiles.json", ProfileHandler.SnapshotNumber.SECOND);
 
-            //Get new profile by comparing the profile list from befor with the one from after the modloader install. Does nothing if the modloarder profile already existed befor
+            //Get new profile by comparing the profile list from before with the one from after the modloader install. Does nothing if the modloader profile already existed before
             string newProfile = ph.ComputeDifference().FirstOrDefault() ?? "";
             if (newProfile != "")
             {
