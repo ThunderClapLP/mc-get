@@ -19,7 +19,7 @@ namespace MCGet
 {
     public class Program
     {
-        public enum COMMANDS { NONE = 0,  INSTALL, SEARCH };
+        public enum COMMANDS { NONE = 0,  INSTALL, SEARCH, RESTORE };
 
         public static string archPath = "";
         public static string dir = "";
@@ -31,7 +31,6 @@ namespace MCGet
         public static Backup backup = new Backup("");
 
         //command line args
-        public static bool cRestore = false;
         public static bool cSilent = false;
         public static bool cFixMissing = false;
         public static COMMANDS command = COMMANDS.NONE;
@@ -45,10 +44,6 @@ namespace MCGet
             {
                 switch (args[i])
                 {
-                    case "-r":
-                        cRestore = true;
-                        invalidArgs = false;
-                        break;
                     case "-s":
                         cSilent = true;
                         break;
@@ -66,7 +61,6 @@ Usage:
 
 Flags:
     -h / --help         :  displays this help page
-    -r                  :  deletes modpack and restores old state
     -s                  :  performs a silent install. No user input needed
     -f / --fix-missing  :  retries to download failed mods
     -m <path>           :  specifies minecraft installation path
@@ -78,6 +72,9 @@ Commands:
 
     search <query>
         searches for modrinth projects
+    
+    restore
+        deletes modpack and restores old state
     
 Examples:
     {ExecutableName} install sodium:1.19.3:fabric
@@ -119,6 +116,11 @@ Examples:
                             commandParams.Add(args[i + 1]);
                         }
                         break;
+                    case "restore":
+                        command = COMMANDS.RESTORE;
+                        commandParams.Clear();
+                        invalidArgs = false;
+                        break;
                     default:
                         if (args[i].ToLower().EndsWith(".zip") || args[i].ToLower().EndsWith(".mrpack"))
                         {
@@ -158,20 +160,6 @@ Examples:
             //restore backup
             if (!cFixMissing)
             {
-                if (cRestore)
-                {
-                    RestoreBackup();
-                    CTools.WriteLine();
-                    CTools.WriteLine("Success!");
-                    if (OperatingSystem.IsWindows())
-                    {
-                        CTools.Write(" Press any key to exit");
-                        Console.ReadKey();
-                    }
-                    Environment.Exit(0);
-                    return;
-                }
-
                 Spinner spinner = new Spinner(CTools.CursorTop);
                 spinner.Update();
                 switch(command)
@@ -288,6 +276,17 @@ Examples:
                         break;
                     case COMMANDS.SEARCH:
                         Modrinth.SearchForProjects(commandParams[0], spinner);
+                        Environment.Exit(0);
+                        break;
+                    case COMMANDS.RESTORE:
+                        RestoreBackup();
+                        CTools.WriteLine();
+                        CTools.WriteLine("Success!");
+                        if (OperatingSystem.IsWindows())
+                        {
+                            CTools.Write(" Press any key to exit");
+                            Console.ReadKey();
+                        }
                         Environment.Exit(0);
                         break;
                 }
@@ -721,7 +720,7 @@ Examples:
                 {
                     CTools.WriteResult(false);
                     CTools.WriteError("An error occured while restoring! Some files might be missing", 1);
-                    if (cRestore || !CTools.ConfirmDialog("Continue anyway?", true))
+                    if (command == COMMANDS.RESTORE || !CTools.ConfirmDialog("Continue anyway?", true))
                     {
                         System.Environment.Exit(0);
                         return;
