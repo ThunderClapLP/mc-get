@@ -54,12 +54,25 @@ namespace MCGet.Platforms
                 }
 
                 //get free space on disc
-                long freeSpace = Math.Min(new DriveInfo(Program.dir).AvailableFreeSpace / 1024, new DriveInfo(Program.minecraftDir).AvailableFreeSpace / 1024);
+                try
+                {
+                    long freeSpace = Math.Min(new DriveInfo(Program.dir).AvailableFreeSpace / 1024, new DriveInfo(Program.minecraftDir).AvailableFreeSpace / 1024);
 
-                if (requiredSpace > freeSpace - 10000) { //10MB buffer to prevent issues
-                    CTools.WriteError("Not enough disk space! " + Math.Max((requiredSpace - freeSpace - 10000) / 1024, 1) + " MB more requiered.");
-                    Program.RevertChanges(); //cannot proceed
-                    return false;
+                    if (requiredSpace > freeSpace - 10000) { //10MB buffer to prevent issues
+                        CTools.WriteError("Not enough disk space! " + Math.Max((requiredSpace - freeSpace - 10000) / 1024, 1) + " MB more requiered.");
+                        Program.RevertChanges(); //cannot proceed
+                        return false;
+                    }
+                    
+                }
+                catch (Exception)
+                {
+                    //failed to get free space. Ask user to check
+                    CTools.WriteError("Could not get free disc space. Please make sure enough disc space is available before continuing!", 1);
+                    if (!CTools.ConfirmDialog(requiredSpace / 1024 + " MB is required. Continue?", true)) {
+                        Program.RevertChanges(); //aborted
+                        return false;
+                    }
                 }
 
                 //download all mods
