@@ -69,7 +69,7 @@ namespace MCGet.Platforms
                 {
                     //failed to get free space. Ask user to check
                     CTools.WriteError("Could not get free disc space. Please make sure enough disc space is available before continuing!", 1);
-                    if (!CTools.ConfirmDialog(requiredSpace / 1024 + " MB is required. Continue?", true)) {
+                    if (!CTools.ConfirmDialog((requiredSpace + 10000) / 1024 + " MB is required. Continue?", true)) {
                         Program.RevertChanges(); //aborted
                         return false;
                     }
