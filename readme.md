@@ -14,7 +14,6 @@ At the moment only [Modrinth](https://modrinth.com/) is supported. [Curseforge](
 
     Flags:
         -h / --help         :  displays this help page
-        -r                  :  deletes modpack and restores old state
         -s                  :  performs a silent install. No user input needed
         -f / --fix-missing  :  retries to download failed mods
         -m <path>           :  specifies minecraft installation path
@@ -27,18 +26,21 @@ At the moment only [Modrinth](https://modrinth.com/) is supported. [Curseforge](
         search <query>
             searches for modrinth projects
 
+        restore
+            deletes modpack and restores old state
+
     Examples:
         mc-get install sodium:1.19.3:fabric
         mc-get install fabulously-optimized
         mc-get -s install fabulously-optimized
         mc-get Fabulously.Optimized-4.10.5.mrpack
-        mc-get -r
+        mc-get restore
 
 ## OS Compatibility
 
- - Windows: Working
- - Linux: Working
- - MacOS: Not Tested
+ - Windows: Working (last tested: v0.3.0)
+ - Linux: Working (last tested: v0.3.0)
+ - MacOS: Working (last tested: v0.2.2)
 
 ## Building
 
