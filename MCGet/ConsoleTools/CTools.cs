@@ -206,11 +206,8 @@ namespace ConsoleTools
                 }
                 (int x, int y) prevCurs = Console.GetCursorPosition();
                 
-
-                for (int i = Console.CursorLeft; i < DockRight(); i++)
-                {
-                    Console.Write(" ");
-                }
+                Console.WriteLine(new String(' ', DockRight() - prevCurs.x)); //writeline to have the same behaviour on all console widths
+                
                 Console.SetCursorPosition(prevCurs.x, Console.GetCursorPosition().Top - 1); //don't use prevCury.y to fix an extra line being spawned on linux
             }
         }

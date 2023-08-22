@@ -96,23 +96,12 @@ namespace ConsoleTools
 
                 //Console.ForegroundColor = ConsoleColor.DarkGreen;
                 Console.Write("[");
-                for (int i = 1; i < width - 5; i++)
+                Console.Write(new String('=', Math.Max((int)(value / (float)max * (width - 5)) - 1, 0)));
+                if (width - Console.CursorLeft - 5 > 0)
                 {
-                    if ((i / (float)(width - 5)) < (value / (float)max))
-                    {
-                        //Console.ForegroundColor = ConsoleColor.Green;
-                        Console.Write("=");
-                    }
-                    else if (((i - 1) / (float)(width - 5)) < (value / (float)max))
-                    {
-                        //Console.ForegroundColor = ConsoleColor.DarkGreen;
-                        Console.Write(">");
-                    } else
-                    {
-                        Console.Write(' ');
-                    }
+                    Console.Write(">");
                 }
-                //Console.ForegroundColor = ConsoleColor.DarkGreen;
+                Console.Write(new String(' ', width - Console.CursorLeft - 5));
                 Console.Write("]");
                 //Console.ResetColor();
 
