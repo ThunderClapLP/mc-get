@@ -12,7 +12,10 @@ namespace ConsoleTools
             if (!CToolsEventLoop.animatableTools.Contains(this))
             {
                 animationStarted = true;
-                CToolsEventLoop.animatableTools.Add(this);
+                lock (CToolsEventLoop.animatableToolsLock)
+                {
+                    CToolsEventLoop.animatableTools.Add(this);
+                }
                 CToolsEventLoop.StartEventLoop(); //start eventloop in case it's not started yet
             }
         }
@@ -20,7 +23,10 @@ namespace ConsoleTools
         public void StopAnimation()
         {
             if (animationStarted) {
-                CToolsEventLoop.animatableTools.Remove(this);
+                lock (CToolsEventLoop.animatableToolsLock)
+                {
+                    CToolsEventLoop.animatableTools.Remove(this);
+                }
             }
         }
     }
