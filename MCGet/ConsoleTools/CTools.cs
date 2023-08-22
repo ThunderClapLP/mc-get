@@ -207,11 +207,11 @@ namespace ConsoleTools
                 (int x, int y) prevCurs = Console.GetCursorPosition();
                 
 
-                for (int i = Console.CursorLeft; i < DockRight() - 1; i++) //-1 needed for linux. buggy else
+                for (int i = Console.CursorLeft; i < DockRight(); i++)
                 {
                     Console.Write(" ");
                 }
-                Console.SetCursorPosition(prevCurs.x, prevCurs.y);
+                Console.SetCursorPosition(prevCurs.x, Console.GetCursorPosition().Top - 1); //don't use prevCury.y to fix an extra line being spawned on linux
             }
         }
     }
