@@ -147,7 +147,7 @@ namespace MCGet
             log.minecraftPath = path;
         }
 
-        public void BackopMod(string orgPath, bool overridden)
+        public bool BackopMod(string orgPath, bool overridden)
         {
             if (overridden)
             {
@@ -160,7 +160,7 @@ namespace MCGet
                 }
                 catch (Exception)
                 {
-
+                    return false;
                 }
             }
             else
@@ -168,9 +168,11 @@ namespace MCGet
                 if (log.installedMods != null)
                     log.installedMods.Add(new BackupFile(Path.GetFileName(orgPath), overridden, ""));
             }
+
+            return true;
         }
 
-        public void BackopOverride(string orgPath, bool overridden)
+        public bool BackopOverride(string orgPath, bool overridden)
         {
             if (overridden)
             {
@@ -189,7 +191,7 @@ namespace MCGet
                 }
                 catch (Exception)
                 {
-
+                    return false;
                 }
             }
             else
@@ -197,6 +199,8 @@ namespace MCGet
                 if (log.overrides != null)
                     log.overrides.Add(new BackupFile(orgPath, overridden, ""));
             }
+
+            return true;
         }
 
         public void AddFailedMod(string projectId)

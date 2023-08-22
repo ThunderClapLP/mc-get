@@ -81,7 +81,7 @@ Examples:
     {ExecutableName} install fabulously-optimized      
     {ExecutableName} -s install fabulously-optimized
     {ExecutableName} Fabulously.Optimized-4.10.5.mrpack
-    {ExecutableName} -r
+    {ExecutableName} restore
 ".Replace("{ExecutableName}", Assembly.GetExecutingAssembly().GetName().Name));
                         Environment.Exit(0);
                         break;
@@ -600,9 +600,27 @@ Examples:
                 if (Directory.GetDirectories(modsDir).Length > 0 || Directory.GetFiles(modsDir).Length > 0)
                 {
                     //backup mods
+                    CTools.Write("Backing up mods directory");
+                    Spinner spinner = new Spinner(CTools.CursorTop);
+                    spinner.StartAnimation();
+                    bool backupFailed = false;
                     foreach (string mod in Directory.GetFiles(modsDir))
                     {
-                        backup.BackopMod(mod, true);
+                        if (!backup.BackopMod(mod, true))
+                        {
+                            backupFailed = true;
+                        }
+                    }
+                    spinner.StopAnimation();
+
+                    if (backupFailed)
+                    {
+                        CTools.WriteResult(false);
+                        CTools.WriteError("Not all previously installed mods could be backed up", 1);
+                    }
+                    else
+                    {
+                        CTools.WriteResult(true);
                     }
 
                     if (!cFixMissing)
