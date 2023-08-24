@@ -39,6 +39,11 @@ namespace MCGet
         public static JsonDocument? manifestDoc = null;
         static void Main(string[] args)
         {
+            try
+            {
+                Console.OutputEncoding = System.Text.Encoding.UTF8; //try to set output encoding to UTF8
+            } catch (Exception) {}
+
             bool invalidArgs = true;
             for (int i = 0; i < args.Length; i++)
             {
