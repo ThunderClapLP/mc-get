@@ -13,8 +13,8 @@ namespace ConsoleTools
 
         public bool dockRight = true;
 
+        public string animChars = "-\\|/"; //"⣷⣯⣟⡿⢿⣻⣽⣾"; //"◐◓◑◒";
         private int state = 0;
-        private char curr = '/';
 
         public long lastUpdate = 0;
         public int minSpinnerTime = 200;
@@ -41,26 +41,7 @@ namespace ConsoleTools
                 return;
             lastUpdate = Environment.TickCount64;
 
-            switch (state)
-            {
-                case 0:
-                    curr = '-';
-                    break;
-                case 1:
-                    curr = '\\';
-                    break;
-                case 2:
-                    curr = '|';
-                    break;
-                case 3:
-                    curr = '/';
-                    state = -1;
-                    break;
-                default:
-                    state = -1;
-                    break;
-            }
-            state++;
+            state = (state + 1) % animChars.Length;
 
             Draw();
         }
@@ -79,7 +60,14 @@ namespace ConsoleTools
 
 
                 Console.ForegroundColor = ConsoleColor.Blue;
-                Console.Write(curr);
+                if (state >= 0 && state < animChars.Length)
+                {
+                    Console.Write(animChars[state]);
+                }
+                else
+                {
+                    Console.Write(' ');
+                }
                 Console.ResetColor();
 
                 Console.CursorLeft = prvLeft;
@@ -91,10 +79,10 @@ namespace ConsoleTools
 
         public void Clean()
         {
-            char prv = curr;
-            curr = ' ';
+            int prvState = state;
+            state = -1;
             Draw();
-            curr = prv;
+            state = prvState;
         }
     }
 }
