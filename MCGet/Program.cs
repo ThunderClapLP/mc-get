@@ -556,7 +556,7 @@ Examples:
                 return false;
             }
 
-            if (File.Exists(dir + "/java/jdk-19/bin/java.exe"))
+            if (File.Exists(dir + "/java/jdk-21.0.6+7-jre/bin/java.exe"))
             {
                 return true; //already downloaded
             }
@@ -587,7 +587,7 @@ Examples:
             {
                 CTools.Write("Downloading Java");
                 Spinner spinner = new Spinner(CTools.CursorTop);
-                if (Networking.DownloadFile("https://download.java.net/java/GA/jdk19/877d6127e982470ba2a7faa31cc93d04/36/GPL/openjdk-19_windows-x64_bin.zip", dir + tempDir + "java.zip", spinner))
+                if (Networking.DownloadFile("https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_x64_windows_hotspot_21.0.6_7.zip", dir + tempDir + "java.zip", spinner))
                 {
                     try
                     {

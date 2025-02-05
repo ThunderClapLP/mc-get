@@ -39,7 +39,7 @@ namespace MCGet.ModLoaders
 
             if (Program.DownloadJavaIfNotPresent())
             {
-                javaPath = Program.dir + "/java/jdk-19/bin/";
+                javaPath = Program.dir + "/java/jdk-21.0.6+7-jre/bin/";
             }
 
             return true;
