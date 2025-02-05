@@ -145,6 +145,8 @@ namespace MCGet.Platforms
 
             if (modloaderVersion.StartsWith("forge"))
                 return new Forge().Install(Program.manifestDoc?.RootElement.GetProperty("minecraft").GetProperty("version").GetString() ?? "", modloaderVersion);
+            else if (modloaderVersion.StartsWith("neoforge"))
+                new NeoForge().Install(Program.manifestDoc?.RootElement.GetProperty("minecraft").GetProperty("version").GetString() ?? "", modloaderVersion);
             else if (modloaderVersion.StartsWith("fabric"))
                 return new Fabric().Install(Program.manifestDoc?.RootElement.GetProperty("minecraft").GetProperty("version").GetString() ?? "", modloaderVersion);
 

@@ -158,6 +158,11 @@ namespace MCGet.Platforms
                         modloaderVersion = "forge-" + loader.GetString();
                         modLoader = new Forge();
                     }
+                    else if (Program.manifestDoc.RootElement.GetProperty("dependencies").TryGetProperty(Encoding.UTF8.GetBytes("neoforge"), out loader))
+                    {
+                        modloaderVersion = "neoforge-" + loader.GetString();
+                        modLoader = new NeoForge();
+                    }
                     else if (Program.manifestDoc.RootElement.GetProperty("dependencies").TryGetProperty(Encoding.UTF8.GetBytes("quilt-loader"), out loader))
                     {
                         modloaderVersion = "quilt-" + loader.GetString();
