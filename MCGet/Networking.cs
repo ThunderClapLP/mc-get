@@ -31,7 +31,7 @@ namespace MCGet
             }
             catch (System.AggregateException e)
             {
-                CTools.WriteLine(e.Message);
+                //CTools.WriteLine(e.Message);
                 spinner?.StopAnimation();
                 return false;
             }
