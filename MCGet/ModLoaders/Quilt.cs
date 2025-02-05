@@ -12,7 +12,7 @@ namespace MCGet.ModLoaders
 {
     public class Quilt : ModLoader
     {
-        static string url = "https://maven.quiltmc.org/repository/release/org/quiltmc/quilt-installer/0.5.1/quilt-installer-0.5.1.jar";
+        static string url = "https://maven.quiltmc.org/repository/release/org/quiltmc/quilt-installer/0.9.2/quilt-installer-0.9.2.jar";
         public override bool Install(string minecraftVersion, string loaderVersion)
         {
             if (loaderVersion == "" || minecraftVersion == "")
