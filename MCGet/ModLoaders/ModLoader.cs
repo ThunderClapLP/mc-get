@@ -54,16 +54,20 @@ namespace MCGet.ModLoaders
                 CTools.Write("Installing " + loaderName);
                 spinner.top = CTools.CursorTop;
 
+                Task<String> logTask = proc.StandardOutput.ReadToEndAsync(); //read the output because forge and neoforge block otherwise
+                Task<String> errorLogTask = proc.StandardError.ReadToEndAsync();
                 while (!proc.HasExited) {
                     spinner.Update();
                     proc.WaitForExit(100);
                 }
 
+                errorLogTask.Wait();
+
                 if (proc.ExitCode != 0)
                 {
                     //Console.WriteLine(quilt.StandardOutput.ReadToEnd());
                     CTools.WriteResult(false);
-                    CTools.WriteLine(proc.StandardError.ReadToEnd());
+                    CTools.WriteLine(errorLogTask.Result + proc.StandardError.ReadToEnd());
                     return false;
                 }
             }
