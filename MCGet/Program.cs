@@ -14,6 +14,7 @@ using System.Web;
 using MCGet.Platforms;
 using System.Reflection;
 using ConsoleTools;
+using System.Text.RegularExpressions;
 
 namespace MCGet
 {
@@ -565,8 +566,22 @@ Examples:
             java.StartInfo.Arguments = "--version";
             try
             {
+                java.StartInfo.RedirectStandardOutput = true;
                 java.Start();
                 java.WaitForExit();
+
+                //check if java version
+                Regex versionRegex = new Regex("\\d+\\.\\d+\\.\\d+");
+                Match match = versionRegex.Match(java.StandardOutput.ReadToEnd());
+                if (match.Success)
+                {
+                    //Console.WriteLine("Found Java: " + match.Value);
+                    string[] version = match.Value.Split(".");
+                    if (int.Parse(version[0]) < 17)
+                    {
+                        throw new Exception("Version to old");
+                    }
+                }
             }
             catch (Exception)
             {
