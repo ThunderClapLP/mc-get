@@ -42,6 +42,13 @@ At the moment only [Modrinth](https://modrinth.com/) is supported. [Curseforge](
  - Linux: Working (last tested: v0.3.0)
  - MacOS: Working (last tested: v0.2.2)
 
+## Supported Modloaders
+
+ - Forge
+ - NeoForge
+ - Fabric
+ - Quilt
+
 ## Building
 
 Requires the [.Net 6 Sdk](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
