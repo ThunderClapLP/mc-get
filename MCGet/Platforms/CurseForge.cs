@@ -149,6 +149,8 @@ namespace MCGet.Platforms
                 new NeoForge().Install(Program.manifestDoc?.RootElement.GetProperty("minecraft").GetProperty("version").GetString() ?? "", modloaderVersion);
             else if (modloaderVersion.StartsWith("fabric"))
                 return new Fabric().Install(Program.manifestDoc?.RootElement.GetProperty("minecraft").GetProperty("version").GetString() ?? "", modloaderVersion);
+            else if (modloaderVersion.StartsWith("quilt"))
+                return new Quilt().Install(Program.manifestDoc?.RootElement.GetProperty("minecraft").GetProperty("version").GetString() ?? "", modloaderVersion);
 
             CTools.WriteError("Modloader is not compatible");
             return false;
