@@ -579,7 +579,7 @@ Examples:
                     string[] version = match.Value.Split(".");
                     if (int.Parse(version[0]) < 17)
                     {
-                        throw new Exception("Version to old");
+                        throw new Exception("Version too old");
                     }
                 }
             }
