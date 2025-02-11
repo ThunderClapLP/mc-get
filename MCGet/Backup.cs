@@ -224,6 +224,7 @@ namespace MCGet
                 {
                     try
                     {
+                        //TODO: organize better. maybe store mods/ dir inside mod.path to make it possible to restore shaders and resourcepacks
                         if (mod.overridden)
                             File.Copy(path + "/mods/" + mod.path, log.minecraftPath + "/mods/" + mod.path, true);
                         else if (File.Exists(log.minecraftPath + "/mods/" + mod.path)) //ignore if doesn't exists
