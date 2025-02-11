@@ -16,7 +16,7 @@ namespace MCGet.Platforms
 {
     public class CurseForge : Platform
     {
-        static string proxy = "";
+        static string apiurl = "";
         static string cfurl = "";
         public override bool DownloadMods()
         {
@@ -111,10 +111,157 @@ namespace MCGet.Platforms
             return true;
         }
 
-        static bool DownloadMod(string projectId, string fileId, string destination, Spinner? spinner = null)
+        bool DownloadMod(string projectId, string fileId, string destination, Spinner? spinner = null)
         {
+            if (spinner == null)
+                spinner = new Spinner(Console.CursorTop);
+            spinner.top = Console.CursorTop;
+
+            //parse download url
+
             CTools.ClearLine();
-            CTools.WriteLine("CURSEFORGE DOWNLOAD IS PROHIBITED");
+            Console.Write("fetching ");
+
+            //try with curseforge api
+            HttpClient client = new HttpClient(new HttpClientHandler() { AllowAutoRedirect = false });
+            client.Timeout = new TimeSpan(0, 0, 10);
+            string url = cfurl + "/api/v1/mods/" + projectId + "/files/" + fileId + "/download";
+
+            int resCode = -1;
+            Task<HttpResponseMessage>? res = null;
+            while (resCode == -1 || resCode >= 300 && resCode <= 399)
+            {
+                if (res != null)
+                {
+                    url = res.Result.Headers.Location?.AbsoluteUri ?? "";
+                    CTools.ClearLine();
+                    //Console.CursorLeft = 0;
+                    Console.Write("Downloading " + Path.GetFileName(HttpUtility.UrlDecode(Path.GetFileName(url))).Split("?")[0] + " ");
+                    //client.Timeout = new TimeSpan(0, 0, 60); // TODO: handle timeout properly
+
+                }
+                res = client.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseHeadersRead);
+
+                spinner?.Draw();
+                spinner?.StartAnimation();
+                try
+                {
+                    res.Wait();
+                }
+                catch (System.AggregateException) { }
+                spinner?.StopAnimation();
+
+                if (res.IsFaulted || res.IsCanceled) //handle cancel gracefully
+                    break;
+
+                resCode = (int)res.Result.StatusCode;
+
+
+            }
+
+            if (resCode == 200)
+            {
+                Task<byte[]>? bytes = res?.Result.Content.ReadAsByteArrayAsync();
+                if (bytes != null)
+                {
+                    spinner?.StartAnimation();
+                    try
+                    {
+                        bytes.Wait();
+                    }
+                    catch (System.AggregateException) { }
+                    spinner?.StopAnimation();
+
+                    if (bytes.IsCompleted && !bytes.IsFaulted && !bytes.IsCanceled)
+                    {
+                        string destFileName = Path.GetFileName(HttpUtility.UrlDecode(Path.GetFileName(url)));
+                        //TODO: add to downloadedMods or Files list! seperate between mods, shaders, resourcepacks
+                        string destinationPath = "";
+                        if (destFileName.ToLower().EndsWith(".jar"))
+                        {
+                            //mod
+                            destinationPath = "mods/" + destFileName;
+                        }
+                        else
+                        {
+                            //shader or resourcepack
+                            client = new HttpClient();
+                            url = apiurl + "/mods/" + projectId;
+
+                            Task<String> tsk = client.GetStringAsync(url);
+
+                            spinner?.Draw();
+                            spinner?.StartAnimation();
+                            try
+                            {
+                                tsk.Wait();
+                            }
+                            catch (System.AggregateException) { }
+                            spinner?.StopAnimation();
+
+                            if (tsk.IsFaulted)
+                            {
+                                CTools.WriteResult(false);
+                                return false;
+                            }
+
+                            try
+                            {
+                                int ClassId = JsonDocument.Parse(tsk.Result).RootElement.GetProperty("data").GetProperty("classId").GetInt32();
+                                switch (ClassId)
+                                {
+                                    case 6: //mod why ever it is not a .jar
+                                        destinationPath = "mods/" + destFileName;
+                                        break;
+                                    case 12: //resourcepack
+                                        destinationPath = "resourcepacks/" + destFileName;
+                                        break;
+                                    //case 17: //worlds
+                                    //    destinationPath = "saves/" + destFileName;
+                                    //    throw new Exception(); //not supported (needs to be extracted)
+                                    //    break;
+                                    case 6552: //shaderpack
+                                        destinationPath = "shaderpacks/" + destFileName;
+                                        break;
+                                    case 6945: //datapack
+                                    default:
+                                        destinationPath = "";
+                                        break;
+                                        //throw new Exception(); //category not supported
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                CTools.WriteResult(false);
+                                return false;
+                            }
+                        }
+
+                        if (destinationPath != "")
+                        {
+                            try
+                            {
+                                if (!Directory.Exists(Path.GetDirectoryName(destination + "/" + destinationPath)))
+                                    Directory.CreateDirectory(Path.GetDirectoryName(destination + "/" + destinationPath)!);
+                            }
+                            catch
+                            {
+                                CTools.WriteResult(false);
+                                return false;
+                            }
+                            System.IO.File.WriteAllBytes(destination + "/" + destinationPath, bytes.Result);
+                            downloadedMods.Add(destinationPath);
+                            CTools.WriteResult(true);
+                        }
+                        else { spinner?.Clean(); CTools.WriteError("Ignoring. Type not supported", 1); }
+
+                        return true;
+                    }
+                }
+
+            }
+
+            CTools.WriteResult(false);
             return false;
         }
 
@@ -142,77 +289,200 @@ namespace MCGet.Platforms
                 CTools.WriteError("Could not find a modloader");
                 return false;
             }
+            ModLoader? modLoader = null;
 
             if (modloaderVersion.StartsWith("forge"))
-                return new Forge().Install(Program.manifestDoc?.RootElement.GetProperty("minecraft").GetProperty("version").GetString() ?? "", modloaderVersion);
+                modLoader = new Forge();
             else if (modloaderVersion.StartsWith("neoforge"))
-                new NeoForge().Install(Program.manifestDoc?.RootElement.GetProperty("minecraft").GetProperty("version").GetString() ?? "", modloaderVersion);
+                modLoader = new NeoForge();
             else if (modloaderVersion.StartsWith("fabric"))
-                return new Fabric().Install(Program.manifestDoc?.RootElement.GetProperty("minecraft").GetProperty("version").GetString() ?? "", modloaderVersion);
+                modLoader = new Fabric();
             else if (modloaderVersion.StartsWith("quilt"))
-                return new Quilt().Install(Program.manifestDoc?.RootElement.GetProperty("minecraft").GetProperty("version").GetString() ?? "", modloaderVersion);
+                modLoader = new Quilt();
 
-            CTools.WriteError("Modloader is not compatible");
-            return false;
-        }
-
-        public override bool InstallMods()
-        {
-            //prepare
-            string modsDir = Path.GetFullPath(Program.minecraftDir + "/mods");
-
-            if (!Directory.Exists(modsDir))
+            if (modLoader == null)
             {
-                CTools.Write("Creating mods directory");
-                try
-                {
-                    Directory.CreateDirectory(modsDir);
-                }
-                catch (Exception)
-                {
-                    CTools.WriteResult(false);
-                    Program.RevertChanges();
-                    return false;
-                }
-                CTools.WriteResult(true);
-            }
-
-            //perform copy
-            CTools.Write("Copying mods");
-            ProgressBar bar = new ProgressBar(0, CTools.DockRight());
-            bar.fill = true;
-            bar.max = Directory.GetFiles(Program.dir + Program.tempDir + "mods/").Length;
-
-            if (bar.max == 0)
-            {
-                bar.max = 1;
-                bar.value = 1;
-            }
-
-            bar.Update();
-            try
-            {
-                foreach (string file in Directory.GetFiles(Program.dir + Program.tempDir + "mods/"))
-                {
-                    if (!File.Exists(modsDir + "/" + Path.GetFileName(file)))
-                        Program.backup.BackopMod(modsDir + "/" + Path.GetFileName(file), false);
-
-                    File.Move(file, modsDir + "/" + Path.GetFileName(file), true);
-                    bar.value++;
-                    bar.Update();
-                }
-            }
-            catch (Exception)
-            {
-                bar.Clear();
-                CTools.WriteResult(false);
-                Program.RevertChanges();
+                CTools.WriteError("Could not find a compatible modloader");
                 return false;
             }
-            bar.Clear();
-            CTools.WriteResult(true);
 
-            return true;
+            ProfileHandler ph = new ProfileHandler();
+            ph.CreateSnapshot(Program.minecraftDir + "/launcher_profiles.json", ProfileHandler.SnapshotNumber.FIRST);
+
+            bool success = modLoader?.Install(Program.manifestDoc?.RootElement.GetProperty("minecraft").GetProperty("version").GetString() ?? "", modloaderVersion) ?? false;
+
+            ph.CreateSnapshot(Program.minecraftDir + "/launcher_profiles.json", ProfileHandler.SnapshotNumber.SECOND);
+
+            //Get new profile by comparing the profile list from before with the one from after the modloader install. Does nothing if the modloader profile already existed before
+            string newProfile = ph.ComputeDifference().FirstOrDefault() ?? "";
+            if (newProfile != "")
+            {
+                //no error checks at the moment
+                ph.LoadProfiles(Program.minecraftDir + "/launcher_profiles.json");
+                if (this.name != "")
+                    ph.SetProfileName(newProfile, this.name); //use modpack name as profile name
+                string newId = newProfile + "-" + new Random().Next(0, 10000);
+                ph.SetProfieId(newProfile, newId);
+                ph.SaveProfiles(Program.minecraftDir + "/launcher_profiles.json");
+                Program.backup.log.modloaderProfile = newId;
+            }
+
+            return success;
+        }
+
+        //0 = Any
+        //1 = Forge
+        //2 = Cauldron
+        //3 = LiteLoader
+        //4 = Fabric
+        //5 = Quilt
+        //6 = NeoForge
+        public static int GetModloaderType(string loader)
+        {
+            switch (loader.ToLower())
+            {
+                case "forge":
+                    return 1;
+                case "fabric":
+                    return 4;
+                case "quilt":
+                    return 5;
+                case "neoforge":
+                    return 6;
+                default:
+                    return -1;
+            }
+        }
+
+        public static async Task<GetProjectResult> GetProject(string name, string minecraftVersion, string modVersion, string loader = "")
+        {
+            GetProjectResult result = new GetProjectResult();
+            HttpClient client = new HttpClient();
+            client.Timeout = TimeSpan.FromSeconds(10);
+
+            //get mod
+            Task<string> getTask = client.GetStringAsync(apiurl + "/mods/search?gameId=432&slug=" + HttpUtility.UrlEncode(name));
+
+            //wait for completion
+            try
+            {
+                await getTask;
+            }
+            catch (HttpRequestException e)
+            {
+                if (e.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    result.error = GetProjectResult.ErrorCode.NotFound;
+                else
+                    result.error = GetProjectResult.ErrorCode.ConnectionFailed;
+            }
+            catch (TaskCanceledException e)
+                { result.error = GetProjectResult.ErrorCode.ConnectionFailed; }
+
+            if (!getTask.IsCompletedSuccessfully || getTask.IsFaulted)
+                return result;
+
+            JsonDocument doc = JsonDocument.Parse(getTask.Result);
+            JsonElement? file = null;
+            int type = -1;
+
+            if (doc.RootElement.GetProperty("data").EnumerateArray().Count() > 0)
+            {
+                string fileParams = "";
+                if (minecraftVersion != "")
+                    fileParams += "gameVersion=" + HttpUtility.UrlEncode(minecraftVersion);
+                if (loader != "")
+                {
+                    int loaderType = GetModloaderType(loader);
+                    if (loaderType > 0)
+                    {
+                        if (fileParams != "")
+                            fileParams += "&";
+                        fileParams += "modLoaderType=" + HttpUtility.UrlEncode(loaderType.ToString());
+                    }
+                }
+                if (fileParams != "")
+                    fileParams = "?" + fileParams;
+                getTask = client.GetStringAsync(apiurl + "/mods/" + doc.RootElement.GetProperty("data").EnumerateArray().First().GetProperty("id").GetInt32() + "/files" + fileParams);
+
+                try
+                {
+                    await getTask;
+                }
+                catch (HttpRequestException e)
+                {
+                    if (e.StatusCode == System.Net.HttpStatusCode.NotFound)
+                        result.error = GetProjectResult.ErrorCode.NotFound;
+                    else
+                        result.error = GetProjectResult.ErrorCode.ConnectionFailed;
+                }
+
+                if (!getTask.IsCompletedSuccessfully || getTask.IsFaulted)
+                    return result;
+
+                JsonDocument versionsDoc = JsonDocument.Parse(getTask.Result);
+
+                if (versionsDoc.RootElement.GetProperty("data").EnumerateArray().Count() > 0)
+                {
+                    IEnumerable<JsonElement> newList = versionsDoc.RootElement.GetProperty("data").EnumerateArray();
+                    if (modVersion != "")
+                        newList = newList.Where((e) => e.GetProperty("fileName").GetString()?.ToLower().Contains(modVersion.ToLower()) ?? false);
+
+                    if (newList.Count() > 0)
+                        file = newList.First();
+                }
+            }
+
+            if (file != null)
+            {
+                result.name = doc.RootElement.GetProperty("data").EnumerateArray().First().GetProperty("name").GetString() ?? "";
+                type = doc.RootElement.GetProperty("data").EnumerateArray().First().GetProperty("classId").GetInt32();
+
+                string? url = file?.GetOrNull("downloadUrl")?.GetString();
+
+                if (url != null)
+                {
+                    if (type == 4471) //modpack
+                        url = "modpack|" + url;
+                    else if (type == 6) //mod
+                        url = "mod|" + loader + "|" + url;
+                    else
+                        url = "unknown|" + url;
+                    result.urls.Add(url);
+                    result.success = true;
+                }
+            }
+
+            return result;
+        }
+
+        public static async Task<SearchResult> SearchForProjects(string search)
+        {
+            SearchResult result = new SearchResult();
+
+            HttpClient client = new HttpClient();
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(Program.api_user_agent);
+
+            Task<string> response = client.GetStringAsync(apiurl + "/mods/search?gameId=432&categoryIds=6,4471&sortField=2&sortOrder=desc&searchFilter=" + HttpUtility.UrlEncode(search));
+
+            try
+            {
+                await response;
+            }
+            catch (Exception) //catch network errors
+            {
+                result.success = false;
+                return result;
+            }
+
+            JsonDocument json = JsonDocument.Parse(response.Result);
+
+            foreach (JsonElement project in json.RootElement.GetProperty("data").EnumerateArray())
+            {
+                if (search.Split(" ").All((s) => (project.GetProperty("name").GetString()?.Contains(s) ?? false) || (project.GetProperty("slug").GetString()?.Contains(s) ?? false)))
+                    result.results.Add((project.GetProperty("classId").GetInt32() == 6 ? "mod" : "modpack") + ": " + project.GetProperty("slug").GetString() + " (" + project.GetProperty("name").GetString() + ")");
+            }
+            result.success = true;
+            return result;
         }
     }
 }

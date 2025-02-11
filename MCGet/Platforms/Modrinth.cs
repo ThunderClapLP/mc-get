@@ -17,7 +17,6 @@ namespace MCGet.Platforms
     public class Modrinth : Platform
     {
         static string url = "https://api.modrinth.com/v2";
-        List<String> downloadedMods = new List<String>();
         public override bool DownloadMods()
         {
             List<JsonElement> failedMods = new List<JsonElement>();
@@ -191,7 +190,8 @@ namespace MCGet.Platforms
             {
                 //no error checks at the moment
                 ph.LoadProfiles(Program.minecraftDir + "/launcher_profiles.json");
-                ph.SetProfileName(newProfile, Program.manifestDoc?.RootElement.GetOrNull("name").ToString() ?? "unknown"); //use modpack name as profile name
+                if (this.name != "")
+                    ph.SetProfileName(newProfile, this.name); //use modpack name as profile name
                 string newId = newProfile + "-" + new Random().Next(0, 10000);
                 ph.SetProfieId(newProfile, newId);
                 ph.SaveProfiles(Program.minecraftDir + "/launcher_profiles.json");
@@ -201,254 +201,131 @@ namespace MCGet.Platforms
             return success;
         }
 
-        public override bool InstallMods()
+        public static async Task<GetProjectResult> GetProject(string name, string minecraftVersion, string modVersion, string loader = "")
         {
-            string modsDir = Path.GetFullPath(Program.minecraftDir + "/mods");
-
-            CTools.Write("Copying mods");
-            ProgressBar bar = new ProgressBar(0, CTools.DockRight());
-            bar.fill = true;
-            bar.max = downloadedMods.Count;
-
-            if (bar.max == 0)
-            {
-                bar.max = 1;
-                bar.value = 1;
-            }
-
-            try
-            {
-                foreach (string file in downloadedMods)
-                {
-                    if (Path.GetDirectoryName(Program.minecraftDir + "/" + file) != null && !Directory.Exists(Path.GetDirectoryName(Program.minecraftDir + "/" + file)))
-                    {
-                        Directory.CreateDirectory(Path.GetDirectoryName(Program.minecraftDir + "/" + file)!);
-                    }
-
-                    if (file.StartsWith("mods/") && !File.Exists(modsDir + "/" + Path.GetFileName(file)))
-                        Program.backup.BackopMod(modsDir + "/" + Path.GetFileName(file), false);
-
-                    File.Move(Program.dir + Program.tempDir + "mods/" + file, Program.minecraftDir + "/" + file, true);
-                    bar.value++;
-                    bar.Update();
-
-                }
-            }
-            catch (Exception e)
-            {
-                bar.Clear();
-                CTools.WriteResult(false);
-                CTools.WriteLine(e.Message);
-                CTools.WriteLine(e.StackTrace);
-                Program.RevertChanges();
-                return false;
-            }
-            bar.Clear();
-            CTools.WriteResult(true);
-            return true;
-        }
-
-        public static List<string>? GetProject(string name, string minecraftVersion, string loader = "", Spinner? spinner = null)
-        {
-            List<string> result = new List<string>();
+            GetProjectResult result = new GetProjectResult();
             HttpClient client = new HttpClient();
+            client.Timeout = TimeSpan.FromSeconds(10);
             client.DefaultRequestHeaders.UserAgent.ParseAdd(Program.api_user_agent);
 
-            CTools.Write("Getting project info");
-
             //get mod
-            Task<string> getTask = client.GetStringAsync(url + "/project/" + name);
+            Task<string> getTask = client.GetStringAsync(url + "/project/" + HttpUtility.UrlEncode(name));
 
             //wait for completion
-            spinner?.StartAnimation();
             try
             {
-                getTask.Wait();
+                await getTask;
             }
-            catch (AggregateException e)
+            catch (HttpRequestException e)
             {
-                spinner?.StopAnimation();
-
-                if (e.InnerException?.Message.Contains("404") == true) //HACK: catch project not found
-                {
-                    CTools.WriteResult(false);
-                    return null;
-                }
-                CTools.WriteResult(false);
-                CTools.WriteError("Connection to Modrinth failed");
-                Environment.Exit(1); //Exit here to prevent no project found message from showing. I know this is bad
-                return null;
+                if (e.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    result.error = GetProjectResult.ErrorCode.NotFound;
+                else
+                    result.error = GetProjectResult.ErrorCode.ConnectionFailed;
             }
-            spinner?.StopAnimation();
+            catch (TaskCanceledException e)
+                { result.error = GetProjectResult.ErrorCode.ConnectionFailed; }
+
+            if (!getTask.IsCompletedSuccessfully || getTask.IsFaulted)
+                return result;
 
             JsonDocument doc = JsonDocument.Parse(getTask.Result);
 
-            string[] versionstring = {"", "", "", ""}; //0: 5 versions; 1: 10 versions; 2: 20 versions
-            int count = 0;
-
-            JsonElement[] versions = doc.RootElement.GetProperty("versions").EnumerateArray().ToArray();
-
-            if (minecraftVersion != "" || loader != "")
+            if (doc.RootElement.GetProperty("versions").EnumerateArray().ToArray().Length == 0)
             {
-                for (int i = versions.Length - 1; i > 0; i--)
-                {
-                    //yes I know this is bad
-                    if (i >= versions.Length - 5) //5 versions
-                    {
-                        versionstring[0] += "\"" + versions[i].ToString() + "\",";
-                    }
-                    else if (i >= versions.Length - 15) // 10 versions
-                    {
-                        versionstring[1] += "\"" + versions[i].ToString() + "\",";
-                    }
-                    else if (i >= versions.Length - 35) //20 versions
-                    {
-                        versionstring[2] += "\"" + versions[i].ToString() + "\",";
-                    }
-                    else //rest
-                    {
-                        versionstring[3] += "\"" + versions[i].ToString() + "\",";
-                    }
-                    count++;
-                }
-            }
-            else if (doc.RootElement.GetProperty("versions").EnumerateArray().Count() > 0)
-            {
-                versionstring[0] += "\"" + doc.RootElement.GetProperty("versions").EnumerateArray().Last() + "\",";
-                count++;
-            }
-
-            versionstring[0] = "[" + versionstring[0].TrimEnd(',') + "]";
-            versionstring[1] = "[" + versionstring[1].TrimEnd(',') + "]";
-            versionstring[2] = "[" + versionstring[2].TrimEnd(',') + "]";
-            versionstring[3] = "[" + versionstring[3].TrimEnd(',') + "]";
-
-            if (count == 0)
-            {
-                CTools.WriteResult(false);
-                CTools.WriteLine("project not found");
-                return null;
+                result.error = GetProjectResult.ErrorCode.NotFound;
+                return result;
             }
 
             //get all versions
-            for (int i = 0; i < versionstring.Length && versionstring[i].Length > 3; i++)
+            getTask = client.GetStringAsync(url + "/project/" + HttpUtility.UrlEncode(name) + "/version");
+
+            try
             {
-                getTask = client.GetStringAsync(url + "/versions?ids=" + versionstring[i]);
+                await getTask;
+            }
+            catch (HttpRequestException e)
+            {
+                if (e.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    result.error = GetProjectResult.ErrorCode.NotFound;
+                else
+                    result.error = GetProjectResult.ErrorCode.ConnectionFailed;
+            }
+            catch (TaskCanceledException e)
+                { result.error = GetProjectResult.ErrorCode.ConnectionFailed; }
 
-                spinner?.StartAnimation();
-                try
+            if (!getTask.IsCompletedSuccessfully || getTask.IsFaulted)
+                return result;
+
+            JsonDocument versionsDoc = JsonDocument.Parse(getTask.Result);
+            IEnumerable<JsonElement> matchingVersions = versionsDoc.RootElement.EnumerateArray();
+
+            //find correct minecraft version
+            matchingVersions = versionsDoc.RootElement.EnumerateArray().Where((version) =>
+            {
+                bool match = true;
+                if (match && minecraftVersion != "")
+                    match = version.GetProperty("game_versions").EnumerateArray().Any((e) => e.GetString() == minecraftVersion);
+                if (match && modVersion != "")
+                    match = version.GetProperty("version_number").GetString()?.ToLower().Contains(modVersion.ToLower()) ?? false;
+                if (match && loader != "")
+                    match = version.GetProperty("loaders").EnumerateArray().Any((e) => e.GetString() == minecraftVersion);
+                return match;
+            });
+            JsonElement? matchingElement = null;
+            if (matchingVersions.Count() > 0)
+                matchingElement = matchingVersions.First();
+
+            string resStr = matchingElement?.GetProperty("files").EnumerateArray().First().GetProperty("url").ToString() ?? "";
+
+            //get dependencies
+            if (matchingElement != null)
+            {
+                string loaderString = "";
+                foreach (JsonElement suppLoader in matchingElement?.GetProperty("loaders").EnumerateArray()!)
                 {
-                    getTask.Wait();
+                    loaderString += suppLoader.ToString() + ",";
                 }
-                catch (AggregateException e)
+                loaderString = loaderString.TrimEnd(',');
+                resStr = doc.RootElement.GetProperty("project_type") + "|" + loaderString + "|" + resStr;
+
+                result.urls.Add(resStr);
+                if (matchingElement?.TryGetProperty("dependencies", out JsonElement dependencies) ?? false)
                 {
-                    spinner?.StopAnimation();
-
-                    if (e.InnerException?.Message.Contains("404") == true) //HACK: catch project not found
+                    foreach (JsonElement dep in dependencies.EnumerateArray())
                     {
-                        CTools.WriteResult(false);
-                        return null;
-                    }
-                    CTools.WriteResult(false);
-                    CTools.WriteError("Connection to Modrinth failed");
-                    Environment.Exit(1); //Exit here to prevent no project found message from showing. I know this is bad
-                    return null;
-                }
-                spinner?.StopAnimation();
-
-                //Console.WriteLine(getTask.Result);
-
-                JsonDocument versionsDoc = JsonDocument.Parse(getTask.Result);
-                JsonElement? matchingElement = null;
-
-                //find correct minecraft version
-                bool found = false;
-                foreach (JsonElement version in versionsDoc.RootElement.EnumerateArray())
-                {
-                    foreach(JsonElement gameVersion in version.GetProperty("game_versions").EnumerateArray())
-                    {
-                        if (gameVersion.ToString() == minecraftVersion || minecraftVersion == "")
+                        if (dep.GetProperty("dependency_type").ToString() == "required" && dep.GetProperty("version_id").ToString() != "")
                         {
-                            if (loader != "")
-                            {
-                                foreach (JsonElement suppLoader in version.GetProperty("loaders").EnumerateArray())
-                                {
-                                    if (loader.ToLower() == suppLoader.ToString().ToLower()) //special loader
-                                    {
-                                        matchingElement = version;
-                                        found = true;
-                                        break;
-                                    }
-                                }
-                                if (found)
-                                    break;
-                            }
-                            else
-                            {
-                                matchingElement = version;
-                                found = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (found) {
-                        break;
-                    }
-                }
-                string resStr = matchingElement?.GetProperty("files").EnumerateArray().First().GetProperty("url").ToString() ?? "";
-
-                //get dependencies
-                spinner?.StartAnimation();
-                if (matchingElement != null)
-                {
-                    string loaderString = "";
-                    foreach (JsonElement suppLoader in matchingElement?.GetProperty("loaders").EnumerateArray()!)
-                    {
-                        loaderString += suppLoader.ToString() + ",";
-                    }
-                    loaderString = loaderString.TrimEnd(',');
-                    resStr = doc.RootElement.GetProperty("project_type") + "|" + loaderString + "|" + resStr;
-
-                    result.Add(resStr);
-                    if (matchingElement?.TryGetProperty("dependencies", out JsonElement dependencies) ?? false)
-                    {
-                        foreach (JsonElement dep in dependencies.EnumerateArray())
-                        {
-                            if (dep.GetProperty("dependency_type").ToString() == "required" && dep.GetProperty("version_id").ToString() != "")
-                            {
-                                //Console.WriteLine(dep.ToString());
-                                result.Add(GetProjectFromVersion(dep.GetProperty("version_id").ToString()));
-                            }
+                            //Console.WriteLine(dep.ToString());
+                            result.urls.Add(await GetProjectFromVersion(dep.GetProperty("version_id").ToString()));
                         }
                     }
                 }
-                spinner?.StopAnimation();
-
-                if (resStr == "" && i == versionstring.Length - 1)
-                {
-                    CTools.WriteResult(false);
-                }
-                else if (result.Count > 0)
-                {
-                    CTools.WriteResult(true);
-                    return result;
-                }
-
             }
 
-            return null;
+            if (resStr == "")
+            {
+                result.error = GetProjectResult.ErrorCode.NotFound;
+            }
+            else if (result.urls.Count > 0)
+            {
+                result.error = GetProjectResult.ErrorCode.None;
+                result.success = true;
+                return result;
+            }
+
+            return result;
         }
 
-        public static string GetProjectFromVersion(string version)
+        public static async Task<string> GetProjectFromVersion(string version)
         {
             HttpClient client = new HttpClient();
             client.DefaultRequestHeaders.UserAgent.ParseAdd(Program.api_user_agent);
             Task<string> getTask = client.GetStringAsync(url + "/version/" + version);
 
-            //spinner is handled in calling function
             try
             {
-                getTask.Wait();
+                await getTask;
             }
             catch (System.Exception)
             {
@@ -458,36 +335,33 @@ namespace MCGet.Platforms
             return JsonDocument.Parse(getTask.Result).RootElement.GetProperty("files").EnumerateArray().First().GetProperty("url").ToString() ?? "";
         }
 
-        public static void SearchForProjects(string search, Spinner? spinner = null)
+        public static async Task<SearchResult> SearchForProjects(string search)
         {
-            CTools.Write("Searching for projects");
+            SearchResult result = new SearchResult();
 
             HttpClient client = new HttpClient();
             client.DefaultRequestHeaders.UserAgent.ParseAdd(Program.api_user_agent);
 
             Task<string> response = client.GetStringAsync(url + "/search?query=" + HttpUtility.UrlEncode(search));
 
-            spinner?.StartAnimation();
             try
             {
-                response.Wait();
+                await response;
             }
-            catch (AggregateException) //catch network errors
+            catch (Exception) //catch network errors
             {
-                spinner?.StopAnimation();
-                CTools.WriteResult(false);
-                return; 
+                result.success = false;
+                return result;
             }
-            spinner?.StopAnimation();
-
-            CTools.WriteResult(true);
 
             JsonDocument json = JsonDocument.Parse(response.Result);
 
             foreach (JsonElement project in json.RootElement.GetProperty("hits").EnumerateArray())
             {
-                CTools.WriteLine(project.GetProperty("project_type") + ": " + project.GetProperty("slug") + " (" + project.GetProperty("title") + ")");
+                result.results.Add(project.GetProperty("project_type") + ": " + project.GetProperty("slug") + " (" + project.GetProperty("title") + ")");
             }
+            result.success = true;
+            return result;
         }
     }
 }
