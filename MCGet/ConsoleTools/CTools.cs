@@ -123,6 +123,36 @@ namespace ConsoleTools
             }
         }
 
+        public static char ChoiceDialog(string prompt, char[] choices, char defaultRes)
+        {
+            lock (ConsoleLock)
+            {
+                bool exit = false;
+                while (!exit)
+                {
+                    Console.Write(prompt + " [" + string.Join("/", choices).ToLower().Replace(defaultRes.ToString(), defaultRes.ToString().ToUpper()) + "]: ");
+
+                    if (SilentMode)
+                    {
+                        Console.WriteLine();
+                        return defaultRes;
+                    }
+
+                    ConsoleKeyInfo key = Console.ReadKey(true);
+                    if (key.Key == ConsoleKey.Enter)
+                        exit = true;
+                    else if (choices.Contains(key.KeyChar))
+                    {
+                        exit = true;
+                        defaultRes = key.KeyChar;
+                    }
+                    else Console.Write("Illegal Input");
+                    Console.WriteLine();
+                }
+            }
+            return defaultRes;
+        }
+
         public static bool ConfirmDialog(string prompt, bool defaultRes = false)
         {
             lock(ConsoleLock)
