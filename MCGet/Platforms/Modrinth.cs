@@ -40,9 +40,9 @@ namespace MCGet.Platforms
 
                     if (!Program.cFixMissing || Program.backup.IsModFailed(file.GetProperty("hashes").GetProperty("sha512").ToString() + ""))
                     {
-                        //make sure to only download client mods
-                        JsonElement? clientElem = file.GetOrNull("env")?.GetOrNull("client");
-                        if (clientElem == null || clientElem?.ToString() != "unsupported")
+                        //make sure to only download mods for specified environment (server / client)
+                        JsonElement? currElem = file.GetOrNull("env")?.GetOrNull(Program.cServer ? "server": "client");
+                        if (currElem == null || currElem?.ToString() != "unsupported")
                         {
                             if (!files.Any(x => x.GetOrNull("path")?.GetString() == file.GetOrNull("path")?.GetString())) //check if file with same path already exists in list
                             {
@@ -177,7 +177,10 @@ namespace MCGet.Platforms
                 CTools.WriteError("Could not find a compatible modloader");
                 return false;
             }
-            
+
+            if (Program.cServer)
+                return true;
+
             ProfileHandler ph = new ProfileHandler();
             ph.CreateSnapshot(Program.minecraftDir + "/launcher_profiles.json", ProfileHandler.SnapshotNumber.FIRST);
 

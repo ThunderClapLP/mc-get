@@ -305,6 +305,9 @@ namespace MCGet.Platforms
                 return false;
             }
 
+            if (Program.cServer)
+                return true;
+
             ProfileHandler ph = new ProfileHandler();
             ph.CreateSnapshot(Program.minecraftDir + "/launcher_profiles.json", ProfileHandler.SnapshotNumber.FIRST);
 
