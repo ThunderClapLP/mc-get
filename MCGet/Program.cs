@@ -45,6 +45,7 @@ namespace MCGet
         public static string extractedName = "";
         static void Main(string[] args)
         {
+            CTools.ValidateConsole();
             try
             {
                 Console.OutputEncoding = System.Text.Encoding.UTF8; //try to set output encoding to UTF8
