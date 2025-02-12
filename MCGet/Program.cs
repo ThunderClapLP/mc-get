@@ -34,6 +34,7 @@ namespace MCGet
         //command line args
         public static bool cSilent = false;
         public static bool cFixMissing = false;
+        public static bool cServer = false;
         public static bool cModrinth = false;
         public static bool cCurseForge = false;
         public static string cMCVersion = "";
@@ -77,6 +78,7 @@ Flags:
     -cf / --curseforge  :  download from curseforge
     -m <path>           :  specifies minecraft installation path
     -mc <version>       :  specifies the minecraft version
+    --server            :  installs mod / modpack as server
     -v / --version      :  displays the current version
 
 Commands:
@@ -120,6 +122,9 @@ Examples:
                     case "-cf":
                     case "--curseforge":
                         cCurseForge = true;
+                        break;
+                    case "--server":
+                        cServer = true;
                         break;
                     case "-v":
                     case "--version":
@@ -433,7 +438,33 @@ Examples:
             ExtractArchive();
 
             //load manifest
-            LoadManifest();
+            if (!cServer || archPath.EndsWith(".mrpack"))
+                LoadManifest();
+            else
+            {
+                //curseforge server install
+                CTools.Write("Copy server files");
+                ProgressBar bar = new ProgressBar(0, CTools.DockRight());
+                bar.fill = true;
+                try
+                {
+                    string outputDir = dir + tempDir + "archive";
+                    if (Directory.GetDirectories(outputDir).Length == 1 && Directory.GetFiles(outputDir).Length == 0)
+                    {
+                        outputDir = Directory.GetDirectories(outputDir)[0];
+                    }
+                    CopyDir(outputDir, minecraftDir, bar);
+                }
+                catch (Exception)
+                {
+                    bar.Clear();
+                    CTools.WriteResult(false);
+                    RevertChanges();
+                }
+                bar.Clear();
+                CTools.WriteResult(true);
+                Environment.Exit(0);
+            }
 
             //Get Platform
             Platform platform = new CurseForge();;
@@ -513,64 +544,82 @@ Examples:
                 RevertChanges();
             }
 
-            //try backup minecraft path
-            if (minecraftDir == "")
+            if (!cServer)
             {
-                minecraftDir = backup.log.minecraftPath + "";
-            }
-
-            if (minecraftDir == "")
-            {
-                if (cFixMissing)
+                //try backup minecraft path
+                if (minecraftDir == "")
                 {
-                    CTools.WriteError("Minecraft directory not found!");
-                    Environment.Exit(0);
+                    minecraftDir = backup.log.minecraftPath + "";
                 }
-                if (System.OperatingSystem.IsWindows())
+
+                if (minecraftDir == "")
                 {
-                    if (Directory.Exists(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/.minecraft"))
+                    if (cFixMissing)
                     {
-                        minecraftDir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/.minecraft";
+                        CTools.WriteError("Minecraft directory not found!");
+                        Environment.Exit(0);
+                    }
+                    if (System.OperatingSystem.IsWindows())
+                    {
+                        if (Directory.Exists(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/.minecraft"))
+                        {
+                            minecraftDir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/.minecraft";
+                        }
+                    }
+                    else if (System.OperatingSystem.IsLinux())
+                    {
+                        minecraftDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/.minecraft";
+                    }
+                    else if (System.OperatingSystem.IsMacOS())
+                    {
+                        minecraftDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/Library/Application Support/minecraft";
                     }
                 }
-                else if (System.OperatingSystem.IsLinux())
+                bool confirmed = false;
+                while (!confirmed)
                 {
-                    minecraftDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/.minecraft";
-                }
-                else if (System.OperatingSystem.IsMacOS())
-                {
-                    minecraftDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/Library/Application Support/minecraft";
+                    if (!Directory.Exists(minecraftDir) || !Directory.Exists(minecraftDir + "/versions"))
+                    {
+                        CTools.WriteError("Minecraft directory not found!");
+
+                        if (cSilent || cFixMissing)
+                            Environment.Exit(0);
+
+                        confirmed = false;
+                    }
+                    else
+                    {
+                        minecraftDir = Path.GetFullPath(minecraftDir);
+                        CTools.WriteLine("Minecraft Directory Found: " + minecraftDir);
+                        if (!cFixMissing)
+                            confirmed = CTools.ConfirmDialog("Use this Directory?", true);
+                        else
+                            confirmed = true;
+
+                    }
+                    if (!confirmed)
+                    {
+                        CTools.Write("Enter Minecraft Path: ");
+                        minecraftDir = Console.ReadLine() + "";
+                        if (minecraftDir != null && minecraftDir != "")
+                            minecraftDir = Path.GetFullPath(minecraftDir);
+                    }
                 }
             }
-            bool confirmed = false;
-            while (!confirmed)
+            else
             {
-                if (!Directory.Exists(minecraftDir) || !Directory.Exists(minecraftDir + "/versions"))
+                if (minecraftDir == "")
                 {
-                    CTools.WriteError("Minecraft directory not found!");
-
-                    if (cSilent || cFixMissing)
-                        Environment.Exit(0);
-
-                    confirmed = false;
+                    CTools.Write("Enter the server path (leave empty for current directory): ");
+                    if (!cSilent)
+                    {
+                        try {minecraftDir = Console.ReadLine() + "";}
+                        catch {CTools.WriteLine("Getting user input failed!"); }
+                        if (minecraftDir == null || minecraftDir == "")
+                            minecraftDir = ".";
+                    }
                 }
-                else
-                {
-                    minecraftDir = Path.GetFullPath(minecraftDir);
-                    CTools.WriteLine("Minecraft Directory Found: " + minecraftDir);
-                    if (!cFixMissing)
-                        confirmed = CTools.ConfirmDialog("Use this Directory?", true);
-                    else
-                        confirmed = true;
-
-                }
-                if (!confirmed)
-                {
-                    CTools.Write("Enter Minecraft Path: ");
-                    minecraftDir = Console.ReadLine() + "";
-                    if (minecraftDir != null && minecraftDir != "")
-                        minecraftDir = Path.GetFullPath(minecraftDir);
-                }
+                minecraftDir = Path.GetFullPath(minecraftDir);
             }
 
             if (backup.log.minecraftPath + "" != minecraftDir)

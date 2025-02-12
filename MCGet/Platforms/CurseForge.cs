@@ -439,6 +439,29 @@ namespace MCGet.Platforms
 
                 string? url = file?.GetOrNull("downloadUrl")?.GetString();
 
+                if (Program.cServer && type  == 4471)
+                {
+                    getTask = client.GetStringAsync(apiurl + "/mods/" + doc.RootElement.GetProperty("data").EnumerateArray().First().GetProperty("id").GetInt32() + "/files/" + file?.GetProperty("serverPackFileId").GetInt32());
+
+                    try
+                    {
+                        await getTask;
+                    }
+                    catch (HttpRequestException e)
+                    {
+                        if (e.StatusCode == System.Net.HttpStatusCode.NotFound)
+                            result.error = GetProjectResult.ErrorCode.NotFound;
+                        else
+                            result.error = GetProjectResult.ErrorCode.ConnectionFailed;
+                    }
+
+                    if (!getTask.IsCompletedSuccessfully || getTask.IsFaulted)
+                        return result;
+
+                    JsonDocument serverDoc = JsonDocument.Parse(getTask.Result);
+                    url = serverDoc.RootElement.GetOrNull("data")?.GetOrNull("downloadUrl")?.GetString();
+                }
+
                 if (url != null)
                 {
                     if (type == 4471) //modpack
@@ -447,9 +470,11 @@ namespace MCGet.Platforms
                         url = "mod|" + loader + "|" + url;
                     else
                         url = "unknown|" + url;
+
                     result.urls.Add(url);
                     result.success = true;
                 }
+
             }
 
             return result;

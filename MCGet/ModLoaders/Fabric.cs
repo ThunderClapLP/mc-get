@@ -33,7 +33,10 @@ namespace MCGet.ModLoaders
             //perform the installation
             Process fabric = new Process();
             fabric.StartInfo.FileName = javaPath + "java";
-            fabric.StartInfo.Arguments = "-jar \"" + Program.dir + Program.tempDir + Path.GetFileName(url) + "\" client -mcversion " + minecraftVersion + " -loader" + loaderVersion + " -dir \"" + Program.minecraftDir + "\"";
+            if (!Program.cServer)
+                fabric.StartInfo.Arguments = "-jar \"" + Program.dir + Program.tempDir + Path.GetFileName(url) + "\" client -mcversion " + minecraftVersion + " -loader" + loaderVersion + " -dir \"" + Program.minecraftDir + "\"";
+            else
+                fabric.StartInfo.Arguments = "-jar \"" + Program.dir + Program.tempDir + Path.GetFileName(url) + "\" server -mcversion " + minecraftVersion + " -loader" + loaderVersion + " -dir \"" + Program.minecraftDir + "\"";
             fabric.StartInfo.WorkingDirectory = Program.dir + Program.tempDir;
 
             fabric.StartInfo.RedirectStandardOutput = true;
