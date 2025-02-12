@@ -99,10 +99,23 @@ namespace ConsoleTools
         {
             lock(ConsoleLock)
             {
+                int prevTop = 0;
+                bool prevIsSame = true;
+                if (IsConsole && spinner != null)
+                {
+                    if (Console.CursorTop != spinner.top)
+                    {
+                        prevIsSame = false;
+                        prevTop = Console.CursorTop;
+                        Console.CursorTop = spinner.top;
+                    }
+                }
                 if (success)
                 {
                     if (IsConsole)
                         Console.CursorLeft = DockRight() - 4;
+                    else if (spinner != null)
+                        Console.Write(LimitText(spinner.msg, 80 - 4, true));
                     Console.Write("  ");
                     if (SupportsColor)
                         Console.ForegroundColor = ConsoleColor.Green;
@@ -112,11 +125,16 @@ namespace ConsoleTools
                 {
                     if (IsConsole)
                         Console.CursorLeft = DockRight() - 8;
+                    else if (spinner != null)
+                        Console.Write(LimitText(spinner.msg, 80 - 8, true));
                     Console.Write("  ");
                     if (SupportsColor)
                         Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine("FAILED");
                 }
+
+                if (IsConsole && !prevIsSame)
+                    Console.CursorTop = prevTop;
 
                 //Console.BackgroundColor=col;
                 if (SupportsColor)
@@ -287,6 +305,18 @@ namespace ConsoleTools
                 
                 Console.SetCursorPosition(prevCurs.x, Console.GetCursorPosition().Top - 1); //don't use prevCury.y to fix an extra line being spawned on linux
             }
+        }
+
+        public static string LimitText(string text, int maxLen, bool exact = false)
+        {
+            if (text.Length <= maxLen)
+            if (exact)
+                return text + new string(' ', maxLen - text.Length);
+            else
+                return text;
+            if (maxLen >= 4)
+                return text.Substring(0, maxLen - 3) + "...";
+            return text.Substring(0, maxLen);
         }
     }
 }

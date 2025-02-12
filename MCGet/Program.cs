@@ -228,7 +228,7 @@ Examples:
                                     mrResult = Modrinth.GetProject(installName, installGameVersion, installModVersion, installLoader);
                                 if (cCurseForge || (!cModrinth && !cCurseForge))
                                     cfResult = CurseForge.GetProject(installName, installGameVersion, installModVersion, installLoader);
-                                CTools.Write("Getting project info");
+                                spinner.msg = "Getting project info";
                                 spinner.StartAnimation();
                                 mrResult?.Wait();
                                 cfResult?.Wait();
@@ -238,7 +238,7 @@ Examples:
                                 //CTools.WriteResult(true);
                                 if ((mrResult?.Result.success ?? false) && (cfResult?.Result.success ?? false))
                                 {
-                                    CTools.WriteResult(true);
+                                    CTools.WriteResult(true, spinner);
                                     char choice = CTools.ChoiceDialog("Install from (M)odrinth or (C)urseForge?", new char[] { 'm', 'c' }, 'm');
                                     if (choice == 'm')
                                     {
@@ -253,13 +253,13 @@ Examples:
                                 }
                                 else if (mrResult?.Result.success ?? false)
                                 {
-                                    CTools.WriteResult(true);
+                                    CTools.WriteResult(true, spinner);
                                     urls = mrResult.Result.urls;
                                     extractedName = mrResult.Result.name;
                                 }
                                 else if (cfResult?.Result.success ?? false)
                                 {
-                                    CTools.WriteResult(true);
+                                    CTools.WriteResult(true, spinner);
                                     urls = cfResult.Result.urls;
                                     extractedName = cfResult.Result.name;
                                 }
@@ -276,17 +276,17 @@ Examples:
                                     {
                                         //modpack
                                         urls[0] = urls[0].Split("|").Last(); //delete modloaders
-                                        CTools.Write("Downloading manifest file");
                                         spinner.top = CTools.CursorTop;
+                                        spinner.msg = "Downloading pack file";
                                         if (!Networking.DownloadFile(urls[0], dir + archiveDir + Path.GetFileName(HttpUtility.UrlDecode(urls[0])), spinner))
                                         {
-                                            CTools.WriteResult(false);
+                                            CTools.WriteResult(false, spinner);
                                             Environment.Exit(0);
                                             return;
                                         }
 
                                         archPath = dir + archiveDir + Path.GetFileName(HttpUtility.UrlDecode(urls[0]));
-                                        CTools.WriteResult(true);
+                                        CTools.WriteResult(true, spinner);
                                     }
                                     else if (urls[0].Split("|")[0] == "mod")
                                     {
@@ -309,19 +309,19 @@ Examples:
                                             Environment.Exit(0);
                                             return;
                                         }
-                                        CTools.Write("Downloading single mod");
                                         spinner.top = CTools.CursorTop;
+                                        spinner.msg = "Downloading single mod";
                                         for (int i = 0; i < urls.Count; i++)
                                         {
                                             if (!Networking.DownloadFile(urls[i], dir + tempDir + "mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), spinner))
                                             {
-                                                CTools.WriteResult(false);
+                                                CTools.WriteResult(false, spinner);
                                                 Environment.Exit(0);
                                                 return;
                                             }
                                         }
 
-                                        CTools.WriteResult(true);
+                                        CTools.WriteResult(true, spinner);
 
                                         //copy mod
 
@@ -355,7 +355,7 @@ Examples:
                                 }
                                 else
                                 {
-                                    CTools.WriteResult(false);
+                                    CTools.WriteResult(false, spinner);
                                     if ((mrResult?.Result.error == GetProjectResult.ErrorCode.NotFound) || (cfResult?.Result.error == GetProjectResult.ErrorCode.NotFound))
                                         CTools.WriteError("No project with slug or id '" + installName + "' was found" + (installGameVersion != "" ? (" for version " + installGameVersion) : ""));
                                     Environment.Exit(1);
@@ -500,6 +500,7 @@ Examples:
             if (!cFixMissing)
                 CopyOverrides();
 
+            //if (!cServer) //do not backup on server
             backup.Save();
 
             CTools.Write("Cleaning up");
@@ -519,7 +520,8 @@ Examples:
             if (OperatingSystem.IsWindows())
             {
                 CTools.Write(" Press any key to exit");
-                Console.ReadKey();
+                try { Console.ReadKey(); }
+                catch {}
             }
             else
             {
@@ -606,6 +608,13 @@ Examples:
                             minecraftDir = Path.GetFullPath(minecraftDir);
                     }
                 }
+
+                if (backup.log.minecraftPath + "" != minecraftDir)
+                {
+                    backup.Clean();
+                    //backup = new Backup(backup.path);
+                }
+                backup.SetMinecraftPath(minecraftDir + "");
             }
             else
             {
@@ -621,15 +630,12 @@ Examples:
                     }
                 }
                 minecraftDir = Path.GetFullPath(minecraftDir);
+                try
+                {
+                    Directory.CreateDirectory(minecraftDir);
+                }
+                catch {}
             }
-
-            if (backup.log.minecraftPath + "" != minecraftDir)
-            {
-                backup.Clean();
-                //backup = new Backup(backup.path);
-            }
-            backup.SetMinecraftPath(minecraftDir + "");
-
         }
 
         //Copy archive to ensure --fix-missing works after the origional archive is deleted or moved by the user.

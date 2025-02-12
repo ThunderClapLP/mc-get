@@ -14,26 +14,26 @@ namespace MCGet.ModLoaders
         public string javaPath = "";
         public abstract bool Install(String minecraftVersion, String loaderVersion);
 
-        public bool DownloadLoader(String url, Spinner spinner) {
+        public bool DownloadLoader(String url, Spinner spinner, string fileName = "") {
 
             CTools.CursorLeft = 0;
             CTools.WriteLine("");
             CTools.CursorTop -= 1;
 
+            if (fileName == "")
+                fileName = Path.GetFileName(url);
+
             spinner.top = CTools.CursorTop;
+            spinner.msg = "Downloading " + fileName + " ";
 
-            CTools.Write("Downloading " + Path.GetFileName(url) + " ");
-
-            spinner.Update();
-
-            if (Networking.DownloadFile(url, Program.dir + Program.tempDir + Path.GetFileName(url), spinner))
+            if (Networking.DownloadFile(url, Program.dir + Program.tempDir + fileName, spinner))
             {
-                CTools.WriteResult(true);
+                CTools.WriteResult(true, spinner);
             }
             else
             {
                 //failed
-                CTools.WriteResult(false);
+                CTools.WriteResult(false, spinner);
                 return false;
             }
 
@@ -51,8 +51,8 @@ namespace MCGet.ModLoaders
                 //perform the installation
                 proc.Start();
 
-                CTools.Write("Installing " + loaderName);
                 spinner.top = CTools.CursorTop;
+                spinner.msg = "Installing " + loaderName;
 
                 Task<String> logTask = proc.StandardOutput.ReadToEndAsync(); //read the output because forge and neoforge block otherwise
                 Task<String> errorLogTask = proc.StandardError.ReadToEndAsync();
@@ -66,19 +66,19 @@ namespace MCGet.ModLoaders
                 if (proc.ExitCode != 0)
                 {
                     //Console.WriteLine(quilt.StandardOutput.ReadToEnd());
-                    CTools.WriteResult(false);
+                    CTools.WriteResult(false, spinner);
                     CTools.WriteLine(errorLogTask.Result + proc.StandardError.ReadToEnd());
                     return false;
                 }
             }
             catch (Exception)
             {
-                CTools.WriteResult(false);
+                CTools.WriteResult(false, spinner);
                 CTools.WriteError("Installing " + loaderName + " failed - Is java installed?");
                 return false;
             }
 
-            CTools.WriteResult(true);
+            CTools.WriteResult(true, spinner);
             return true;
         }
     }

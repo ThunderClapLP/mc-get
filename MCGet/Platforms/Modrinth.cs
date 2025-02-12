@@ -26,6 +26,7 @@ namespace MCGet.Platforms
                 ProgressBar bar = new ProgressBar(0, CTools.DockRight());
                 bar.fill = true;
                 bar.max = Program.manifestDoc.RootElement.GetProperty("files").GetArrayLength();
+                bar.Update();
 
                 Spinner spinner = new Spinner(CTools.CursorTop);
 
@@ -124,16 +125,16 @@ namespace MCGet.Platforms
             spinner.top = CTools.CursorTop;
 
             //parse download url
-            CTools.ClearLine();
-            CTools.Write("Downloading " + Path.GetFileName(destinationPath));
+            //CTools.ClearLine();
+            spinner.msg = "Downloading " + Path.GetFileName(destinationPath);
 
             if (url == "" || !Networking.DownloadFile(url, destinationPath, spinner))
             {
-                CTools.WriteResult(false);
+                CTools.WriteResult(false, spinner);
                 return false;
             }
 
-            CTools.WriteResult(true);
+            CTools.WriteResult(true, spinner);
             return true;
         }
 

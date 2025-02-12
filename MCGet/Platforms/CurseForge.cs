@@ -114,13 +114,11 @@ namespace MCGet.Platforms
         bool DownloadMod(string projectId, string fileId, string destination, Spinner? spinner = null)
         {
             if (spinner == null)
-                spinner = new Spinner(Console.CursorTop);
-            spinner.top = Console.CursorTop;
+                spinner = new Spinner(CTools.CursorTop);
+            spinner.top = CTools.CursorTop;
 
             //parse download url
-
-            CTools.ClearLine();
-            Console.Write("fetching ");
+            spinner.msg = "fetching ";
 
             //try with curseforge api
             HttpClient client = new HttpClient(new HttpClientHandler() { AllowAutoRedirect = false });
@@ -134,9 +132,10 @@ namespace MCGet.Platforms
                 if (res != null)
                 {
                     url = res.Result.Headers.Location?.AbsoluteUri ?? "";
-                    CTools.ClearLine();
                     //Console.CursorLeft = 0;
-                    Console.Write("Downloading " + Path.GetFileName(HttpUtility.UrlDecode(Path.GetFileName(url))).Split("?")[0] + " ");
+                    string newMessage = "Downloading " + Path.GetFileName(HttpUtility.UrlDecode(Path.GetFileName(url))).Split("?")[0] + " ";
+                    if (spinner!.msg != newMessage)
+                        spinner!.msg = newMessage;
                     //client.Timeout = new TimeSpan(0, 0, 60); // TODO: handle timeout properly
 
                 }
@@ -201,7 +200,7 @@ namespace MCGet.Platforms
 
                             if (tsk.IsFaulted)
                             {
-                                CTools.WriteResult(false);
+                                CTools.WriteResult(false, spinner);
                                 return false;
                             }
 
@@ -232,7 +231,7 @@ namespace MCGet.Platforms
                             }
                             catch (Exception e)
                             {
-                                CTools.WriteResult(false);
+                                CTools.WriteResult(false, spinner);
                                 return false;
                             }
                         }
@@ -246,12 +245,12 @@ namespace MCGet.Platforms
                             }
                             catch
                             {
-                                CTools.WriteResult(false);
+                                CTools.WriteResult(false, spinner);
                                 return false;
                             }
                             System.IO.File.WriteAllBytes(destination + "/" + destinationPath, bytes.Result);
                             downloadedMods.Add(destinationPath);
-                            CTools.WriteResult(true);
+                            CTools.WriteResult(true, spinner);
                         }
                         else { spinner?.Clean(); CTools.WriteError("Ignoring. Type not supported", 1); }
 
@@ -261,7 +260,7 @@ namespace MCGet.Platforms
 
             }
 
-            CTools.WriteResult(false);
+            CTools.WriteResult(false, spinner);
             return false;
         }
 

@@ -26,9 +26,7 @@ namespace MCGet.ModLoaders
             loaderVersion = loaderVersion.Replace("neoforge-", "");
 
             string forgeFullUrl = url.Replace("{FORGE_VERSION}", loaderVersion);
-
-            Spinner spinner = new Spinner(Console.CursorTop);
-            spinner.top = Console.CursorTop;
+            Spinner spinner = new Spinner(CTools.CursorTop);
 
             if (!DownloadLoader(forgeFullUrl, spinner))
             {

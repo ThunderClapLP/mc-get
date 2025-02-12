@@ -11,13 +11,26 @@ namespace ConsoleTools
         public int left;
         public int top;
 
+        private string _msg = "";
+        public string msg
+        {
+            get { return _msg; }
+            set
+            {
+                if (CTools.IsConsole || msg != value)
+                    msgPrinted = false;
+                _msg = value;
+            }
+        }
+        private bool msgPrinted = false;
+
         public bool dockRight = true;
 
         public string animChars = "-\\|/"; //"⣷⣯⣟⡿⢿⣻⣽⣾"; //"◐◓◑◒";
         private int state = 0;
 
         public long lastUpdate = 0;
-        public int minSpinnerTime = 200;
+        public int minSpinnerTime = CTools.IsConsole ? 200 : 1000;
 
         public Spinner(int left, int top)
         {
@@ -29,16 +42,47 @@ namespace ConsoleTools
 
         public Spinner(int top)
         {
-            this.left = CTools.DockRight();
+            this.left = CTools.IsConsole ? CTools.DockRight() : 80;
             this.top = top;
 
             dockRight = true;
         }
 
-        public override void Update()
+        public Spinner(string msg, int left, int top)
+        {
+            this.msg = msg;
+
+            this.left = left;
+            this.top = top;
+
+            dockRight = true;
+        }
+
+        public Spinner(string msg, int top)
+        {
+            this.msg = msg;
+
+            this.left = CTools.IsConsole ? CTools.DockRight() : 80;
+            this.top = top;
+
+            dockRight = true;
+        }
+
+        private void PrintMsg()
+        {
+            CTools.CursorLeft = 0;
+            Console.Write(CTools.LimitText(msg, Math.Max(left - 1, 0), true));
+            CTools.CursorLeft = Math.Min(left - 1, msg.Length);
+        }
+
+        public override void Update(bool forceDraw = false)
         {
             if (lastUpdate > Environment.TickCount64 - minSpinnerTime)
+            {
+                if (forceDraw)
+                    Draw();
                 return;
+            }
             lastUpdate = Environment.TickCount64;
 
             state = (state + 1) % animChars.Length;
@@ -50,22 +94,35 @@ namespace ConsoleTools
         {
             lock (CTools.ConsoleLock)
             {
-                if (!CTools.IsConsole)
+                if (!CTools.IsConsole && msg == "")
                 {
-                    if (state == 0)
-                        Console.Write(".");
+                    Console.Write(".");
                     return;
                 }
-                bool prvVisible = OperatingSystem.IsWindows() ? Console.CursorVisible : true;
-                int prvLeft = Console.CursorLeft;
-                int prvTop = Console.CursorTop;
 
-                Console.CursorVisible = false;
-                Console.CursorLeft = dockRight ? CTools.DockRight() - 1 : left;
-                Console.CursorTop = top;
+                if (!CTools.IsConsole || !msgPrinted)
+                {
+                    if (msg != "")
+                        PrintMsg();
+                    msgPrinted = true;
+                }
+                bool prvVisible = true;
+                int prvLeft = 0;
+                int prvTop = 0;
 
+                if (CTools.IsConsole)
+                {
+                    prvVisible = OperatingSystem.IsWindows() ? Console.CursorVisible : true;
+                    prvLeft = Console.CursorLeft;
+                    prvTop = Console.CursorTop;
 
-                Console.ForegroundColor = ConsoleColor.Blue;
+                    Console.CursorVisible = false;
+                    Console.CursorLeft = dockRight ? CTools.DockRight() - 1 : left;
+                    Console.CursorTop = top;
+                }
+
+                if (CTools.SupportsColor)
+                    Console.ForegroundColor = ConsoleColor.Blue;
                 if (state >= 0 && state < animChars.Length)
                 {
                     Console.Write(animChars[state]);
@@ -74,11 +131,17 @@ namespace ConsoleTools
                 {
                     Console.Write(' ');
                 }
-                Console.ResetColor();
+                if (CTools.SupportsColor)
+                    Console.ResetColor();
 
-                Console.CursorLeft = prvLeft;
-                Console.CursorTop = prvTop;
-                Console.CursorVisible = prvVisible;
+                if (CTools.IsConsole)
+                {
+                    Console.CursorLeft = prvLeft;
+                    Console.CursorTop = prvTop;
+                    Console.CursorVisible = prvVisible;
+                }
+                else
+                    Console.WriteLine();
             }
 
         }

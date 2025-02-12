@@ -37,7 +37,7 @@ namespace ConsoleTools
             alwaysBottom = true;
         }
 
-        public void Update()
+        public void Update(bool forceDraw = false)
         {
             //if (lastUpdate > Environment.TickCount64 - 50)
             //    return;
