@@ -12,35 +12,60 @@ namespace ConsoleTools
         public static int MaxWidth = 100;
         public static bool SilentMode = false;
         public static object ConsoleLock = new object();
+        public static bool IsConsole = true;
+        public static bool SupportsColor = true;
+
+        public static void ValidateConsole()
+        {
+            try { IsConsole = Console.WindowHeight > 0; }
+            catch { IsConsole = false; }
+            try { var col = Console.BackgroundColor; Console.BackgroundColor = col; SupportsColor = true; }
+            catch { SupportsColor = false; }
+        }
 
         public static int CursorTop
         {
             get {
-                    int val = 0;
-                    lock(ConsoleLock) val = Console.CursorTop;
-                    return val;
+                if (!IsConsole)
+                    return 0;
+                int val = 0;
+                lock(ConsoleLock) val = Console.CursorTop;
+                return val;
                 }
-            set { lock (ConsoleLock) Console.CursorTop = value; }
+            set {
+                if (!IsConsole)
+                    return;
+                lock (ConsoleLock) Console.CursorTop = value;
+            }
         }
         public static int CursorLeft
         {
-            get { 
+            get {
+                if (!IsConsole)
+                    return 0;
                 int val = 0;
                 lock(ConsoleLock) val = Console.CursorLeft;
                 return val;
             }
-            set { lock (ConsoleLock) Console.CursorLeft = value; }
+            set {
+                if (!IsConsole)
+                    return;
+                lock (ConsoleLock) Console.CursorLeft = value;
+            }
         }
 
         public static void SetCursorPosition(int left, int top)
         {
-            lock(ConsoleLock) Console.SetCursorPosition(left, top);
+            if (!IsConsole)
+                return;
+            lock (ConsoleLock) Console.SetCursorPosition(left, top);
         }
 
         public static (int Left, int Top) GetCursorPosition()
         {
-            (int, int) val;
-            lock(ConsoleLock) val = Console.GetCursorPosition();
+            (int, int) val = (0, 0);
+            if (IsConsole)
+                lock (ConsoleLock) val = Console.GetCursorPosition();
             return val;
         }
 
@@ -69,29 +94,33 @@ namespace ConsoleTools
         {
             lock(ConsoleLock) Console.Write(format, list);
         }
-        public static void WriteResult(bool success)
+        //TODO: add optional spinner attribute to draw the result at spinner pos and write it's msg if not in terminal mode
+        public static void WriteResult(bool success, Spinner? spinner = null)
         {
             lock(ConsoleLock)
             {
-                ConsoleColor col = Console.BackgroundColor;
-
                 if (success)
                 {
-                    Console.CursorLeft = DockRight() - 4;
+                    if (IsConsole)
+                        Console.CursorLeft = DockRight() - 4;
                     Console.Write("  ");
-                    Console.ForegroundColor = ConsoleColor.Green;
+                    if (SupportsColor)
+                        Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine("OK");
                 }
                 else
                 {
-                    Console.CursorLeft = DockRight() - 8;
+                    if (IsConsole)
+                        Console.CursorLeft = DockRight() - 8;
                     Console.Write("  ");
-                    Console.ForegroundColor = ConsoleColor.Red;
+                    if (SupportsColor)
+                        Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine("FAILED");
                 }
 
                 //Console.BackgroundColor=col;
-                Console.ResetColor();
+                if (SupportsColor)
+                    Console.ResetColor();
             }
         }
 
@@ -99,25 +128,27 @@ namespace ConsoleTools
         {
             lock(ConsoleLock)
             {
-                ConsoleColor col = Console.BackgroundColor;
-
                 if (level == 2)
                 {
-                    Console.BackgroundColor = ConsoleColor.DarkRed;
+                    if (SupportsColor)
+                        Console.BackgroundColor = ConsoleColor.DarkRed;
                     Console.Write("ERROR: ");
                 }
                 else if (level == 1)
                 {
                     //Console.BackgroundColor = ConsoleColor.DarkYellow;
-                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    if (SupportsColor)
+                        Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.Write("WARN: ");
                 } else
                 {
-                    Console.ForegroundColor = ConsoleColor.Blue;
+                    if (SupportsColor)
+                        Console.ForegroundColor = ConsoleColor.Blue;
                     Console.Write("INFO: ");
                 }
                 //Console.BackgroundColor = col;
-                Console.ResetColor();
+                if (SupportsColor)
+                    Console.ResetColor();
 
                 Console.WriteLine(err);
             }
@@ -134,13 +165,18 @@ namespace ConsoleTools
 
                     if (SilentMode)
                     {
-                        Console.WriteLine();
+                        Console.WriteLine(defaultRes.ToString());
                         return defaultRes;
                     }
 
-                    ConsoleKeyInfo key = Console.ReadKey(true);
+                    ConsoleKeyInfo key = new ConsoleKeyInfo(defaultRes, ConsoleKey.Enter, false, false, false);
+                    try {key = Console.ReadKey(true); }
+                    catch {}
                     if (key.Key == ConsoleKey.Enter)
+                    {
+                        Console.Write(defaultRes.ToString());
                         exit = true;
+                    }
                     else if (choices.Contains(key.KeyChar))
                     {
                         exit = true;
@@ -164,12 +200,14 @@ namespace ConsoleTools
 
                     if (SilentMode)
                     {
-                        Console.WriteLine();
+                        Console.WriteLine(defaultRes ? "y" : "n");
                         return defaultRes;
                     }
 
-                    ConsoleKeyInfo key = Console.ReadKey(true);
-                    switch (key.Key)
+                    ConsoleKey key = ConsoleKey.Enter;
+                    try {key = Console.ReadKey(true).Key; }
+                    catch {}
+                    switch (key)
                     {
                         case ConsoleKey.Y:
                             exit = true;
@@ -197,6 +235,8 @@ namespace ConsoleTools
 
         public static int DockRight()
         {
+            if (!IsConsole)
+                return 0;
             if (Console.WindowWidth <= Console.BufferWidth && MaxWidth > Console.WindowWidth)
             {
                 return Console.WindowWidth;
@@ -213,6 +253,8 @@ namespace ConsoleTools
 
         public static int DockBottom()
         {
+            if (!IsConsole)
+                return 0;
             int val;
             if (Console.WindowTop + Console.WindowHeight < Console.BufferHeight)
             {
@@ -228,8 +270,13 @@ namespace ConsoleTools
 
         public static void ClearLine(bool fromStart = true)
         {
-            lock(ConsoleLock)
+            lock (ConsoleLock)
             {
+                if (!IsConsole)
+                {
+                    Console.WriteLine();
+                    return;
+                }
                 if (fromStart)
                 {
                     Console.CursorLeft = 0;

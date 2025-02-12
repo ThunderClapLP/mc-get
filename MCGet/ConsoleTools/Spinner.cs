@@ -48,8 +48,14 @@ namespace ConsoleTools
 
         public void Draw()
         {
-            lock(CTools.ConsoleLock)
+            lock (CTools.ConsoleLock)
             {
+                if (!CTools.IsConsole)
+                {
+                    if (state == 0)
+                        Console.Write(".");
+                    return;
+                }
                 bool prvVisible = OperatingSystem.IsWindows() ? Console.CursorVisible : true;
                 int prvLeft = Console.CursorLeft;
                 int prvTop = Console.CursorTop;

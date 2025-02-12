@@ -41,9 +41,11 @@ namespace ConsoleTools
         {
             //if (lastUpdate > Environment.TickCount64 - 50)
             //    return;
-            
+
             //lastUpdate = Environment.TickCount64;
-            lock(CTools.ConsoleLock)
+            if (!CTools.IsConsole)
+                return;
+            lock (CTools.ConsoleLock)
             {
                 bool prvVisible = OperatingSystem.IsWindows() ? Console.CursorVisible : true;
                 (int x, int y) prvCurs = Console.GetCursorPosition();
@@ -121,6 +123,9 @@ namespace ConsoleTools
 
         public void Clear()
         {
+            if (!CTools.IsConsole)
+                return;
+                
             lock(CTools.ConsoleLock)
             {
                 int prvLeft = Console.CursorLeft;
