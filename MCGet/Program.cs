@@ -56,8 +56,10 @@ namespace MCGet
             {
                 switch (args[i])
                 {
+                    case "--silent":
                     case "-s":
                         cSilent = true;
+                        CTools.SilentMode = true;
                         break;
                     case "-f":
                     case "--fix-missing":
@@ -443,6 +445,8 @@ Examples:
                 LoadManifest();
             else
             {
+                //perform backup and delete existing mods in modfolder
+                BackupModsFolder();
                 //curseforge server install
                 CTools.Write("Copy server files");
                 ProgressBar bar = new ProgressBar(0, CTools.DockRight());
@@ -668,15 +672,15 @@ Examples:
                 RevertChanges();
             }
 
-            CTools.Write("Extracting: " + Path.GetFileName(archPath));
+            Spinner spinner = new Spinner("Extracting: " + Path.GetFileName(archPath), CTools.CursorTop);
             try
             {
                 ZipFile.ExtractToDirectory(archPath, dir + tempDir + "archive/");
-                CTools.WriteResult(true);
+                CTools.WriteResult(true, spinner);
             }
             catch (Exception e)
             {
-                CTools.WriteResult(false);
+                CTools.WriteResult(false, spinner);
                 //Console.WriteLine(e.Message);
                 RevertChanges();
                 return;
@@ -725,8 +729,9 @@ Examples:
                 return false;
             }
 
-            if (File.Exists(dir + "/java/jdk-21.0.6+7-jre/bin/java.exe"))
+            if (File.Exists(dir + "/java/jdk-21.0.6+7-jre/bin/java.exe") || File.Exists(dir + "/java/jdk-21.0.6+7-jre/bin/java"))
             {
+                CTools.WriteError("Found internal Java", 0);
                 return true; //already downloaded
             }
 
@@ -744,10 +749,11 @@ Examples:
                 Match match = versionRegex.Match(java.StandardOutput.ReadToEnd());
                 if (match.Success)
                 {
-                    //Console.WriteLine("Found Java: " + match.Value);
+                    CTools.WriteError("Found Java: " + match.Value, 0);
                     string[] version = match.Value.Split(".");
                     if (int.Parse(version[0]) < 17)
                     {
+                        CTools.WriteError("Java verion too old", 1);
                         throw new Exception("Version too old");
                     }
                 }
@@ -755,7 +761,7 @@ Examples:
             catch (Exception)
             {
                 CTools.Write("Downloading Java");
-                Spinner spinner = new Spinner(CTools.CursorTop);
+                Spinner spinner = new Spinner("Downloading Java", CTools.CursorTop);
                 if (Networking.DownloadFile("https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_x64_windows_hotspot_21.0.6_7.zip", dir + tempDir + "java.zip", spinner))
                 {
                     try
@@ -769,13 +775,13 @@ Examples:
                     catch (Exception e)
                     {
                         CTools.WriteLine(e.Message);
-                        CTools.WriteResult(false);
+                        CTools.WriteResult(false, spinner);
                         return false;
                     }
-                    CTools.WriteResult(true);
+                    CTools.WriteResult(true, spinner);
                     return true;
                 }
-                CTools.WriteResult(false);
+                CTools.WriteResult(false, spinner);
             }
 
             return false;
@@ -789,8 +795,7 @@ Examples:
                 if (Directory.GetDirectories(modsDir).Length > 0 || Directory.GetFiles(modsDir).Length > 0)
                 {
                     //backup mods
-                    CTools.Write("Backing up mods directory");
-                    Spinner spinner = new Spinner(CTools.CursorTop);
+                    Spinner spinner = new Spinner("Backing up mods directory", CTools.CursorTop);
                     spinner.StartAnimation();
                     bool backupFailed = false;
                     foreach (string mod in Directory.GetFiles(modsDir))
@@ -804,12 +809,12 @@ Examples:
 
                     if (backupFailed)
                     {
-                        CTools.WriteResult(false);
+                        CTools.WriteResult(false, spinner);
                         CTools.WriteError("Not all previously installed mods could be backed up", 1);
                     }
                     else
                     {
-                        CTools.WriteResult(true);
+                        CTools.WriteResult(true, spinner);
                     }
 
                     if (!cFixMissing)
