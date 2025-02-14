@@ -305,8 +305,6 @@ namespace MCGet.Platforms
                 return false;
             }
 
-            if (Program.cServer)
-                return true;
 
             ProfileHandler ph = new ProfileHandler();
             ph.CreateSnapshot(Program.minecraftDir + "/launcher_profiles.json", ProfileHandler.SnapshotNumber.FIRST);
@@ -314,6 +312,9 @@ namespace MCGet.Platforms
             bool success = modLoader?.Install(Program.manifestDoc?.RootElement.GetProperty("minecraft").GetProperty("version").GetString() ?? "", modloaderVersion) ?? false;
 
             ph.CreateSnapshot(Program.minecraftDir + "/launcher_profiles.json", ProfileHandler.SnapshotNumber.SECOND);
+
+            if (Program.cServer)
+                return true;
 
             //Get new profile by comparing the profile list from before with the one from after the modloader install. Does nothing if the modloader profile already existed before
             string newProfile = ph.ComputeDifference().FirstOrDefault() ?? "";
