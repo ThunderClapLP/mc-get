@@ -18,7 +18,8 @@ namespace MCGet.ModLoaders
 
             CTools.CursorLeft = 0;
             CTools.WriteLine("");
-            CTools.CursorTop -= 1;
+            if (CTools.CursorTop > 0)
+                CTools.CursorTop -= 1;
 
             if (fileName == "")
                 fileName = Path.GetFileName(url);

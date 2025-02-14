@@ -303,7 +303,7 @@ namespace ConsoleTools
                 
                 Console.WriteLine(new String(' ', DockRight() - prevCurs.x)); //writeline to have the same behaviour on all console widths
                 
-                Console.SetCursorPosition(prevCurs.x, Console.GetCursorPosition().Top - 1); //don't use prevCury.y to fix an extra line being spawned on linux
+                Console.SetCursorPosition(prevCurs.x, Math.Max(Console.GetCursorPosition().Top - 1, 0)); //don't use prevCury.y to fix an extra line being spawned on linux
             }
         }
 
