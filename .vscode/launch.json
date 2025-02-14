@@ -2,16 +2,27 @@
     "version": "0.2.0",
     "configurations": [
         {
-            // Use IntelliSense to find out which attributes exist for C# debugging
-            // Use hover for the description of the existing attributes
-            // For further information visit https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md
             "name": ".NET Core Launch (console)",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
+            "program": "${workspaceFolder}/MCGet/bin/Debug/net8.0/mc-get.dll",
+            "args": ["--server", "--silent", "-m", "./COBBLEMON", "install", "cobblemon-fabric"],
+            "cwd": "${workspaceFolder}/MCGet",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        },
+        {
+            // Use IntelliSense to find out which attributes exist for C# debugging
+            // Use hover for the description of the existing attributes
+            // For further information visit https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md
+            "name": ".NET Core Launch (terminal)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/MCGet/bin/Debug/net6.0/mc-get.dll",
-            "args": [],
+            "program": "${workspaceFolder}/MCGet/bin/Debug/net8.0/mc-get.dll",
+            "args": ["--server", "install", "cobblemon-fabric"],
             "cwd": "${workspaceFolder}/MCGet",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "integratedTerminal",
