@@ -15,6 +15,7 @@ using MCGet.Platforms;
 using System.Reflection;
 using ConsoleTools;
 using System.Text.RegularExpressions;
+using System.Formats.Tar;
 
 namespace MCGet
 {
@@ -724,11 +725,6 @@ Examples:
 
         public static bool DownloadJavaIfNotPresent()
         {
-            if (!System.OperatingSystem.IsWindows())
-            {
-                return false;
-            }
-
             if (File.Exists(dir + "/java/jdk-21.0.6+7-jre/bin/java.exe") || File.Exists(dir + "/java/jdk-21.0.6+7-jre/bin/java"))
             {
                 CTools.WriteError("Found internal Java", 0);
@@ -760,9 +756,15 @@ Examples:
             }
             catch (Exception)
             {
-                CTools.Write("Downloading Java");
+                string javaUrl = "";
+                if (System.OperatingSystem.IsWindows())
+                    javaUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_x64_windows_hotspot_21.0.6_7.zip";
+                else if (System.OperatingSystem.IsLinux())
+                    javaUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_x64_linux_hotspot_21.0.6_7.tar.gz";
+                else
+                    return false; //system not compatable
                 Spinner spinner = new Spinner("Downloading Java", CTools.CursorTop);
-                if (Networking.DownloadFile("https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_x64_windows_hotspot_21.0.6_7.zip", dir + tempDir + "java.zip", spinner))
+                if (Networking.DownloadFile(javaUrl, dir + tempDir + "java.zip", spinner))
                 {
                     try
                     {
@@ -770,7 +772,25 @@ Examples:
                         {
                             Directory.CreateDirectory(dir + "/java/");
                         }
-                        ZipFile.ExtractToDirectory(dir + tempDir + "java.zip", dir + "/java/", true);
+
+                        if (System.OperatingSystem.IsWindows())
+                            ZipFile.ExtractToDirectory(dir + tempDir + "java.zip", dir + "/java/", true);
+                        else if (System.OperatingSystem.IsLinux())
+                        {
+                            //file is a tar.gz on linux
+                            TarFile.ExtractToDirectory(
+                                new GZipStream(new FileStream(dir + tempDir + "java.zip", FileMode.Open, FileAccess.Read),
+                                CompressionMode.Decompress, leaveOpen: false),
+                                dir + "/java/", overwriteFiles: true);
+
+                            //mark as executable on linux
+                            //TODO: use File.SetUnixFileModes when upgrading to dotnet 8
+                            Process chmodProc = new Process();
+                            chmodProc.StartInfo.FileName = "chmod";
+                            chmodProc.StartInfo.Arguments = "+x \"" + dir + "/java/jdk-21.0.6+7-jre/bin/java\"";
+                            chmodProc.Start();
+                        }
+
                     }
                     catch (Exception e)
                     {
