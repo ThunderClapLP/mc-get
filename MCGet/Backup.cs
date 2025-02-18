@@ -212,7 +212,7 @@ namespace MCGet
 
         public bool RestoreMods()
         {
-            if (log.installedMods != null)
+            if (log.installedMods != null && log.minecraftPath != "")
             {
                 if (!Directory.Exists(log.minecraftPath + "/mods/"))
                 {
