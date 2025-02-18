@@ -16,10 +16,13 @@ namespace MCGet.Platforms
 {
     public class CurseForge : Platform
     {
-        static string apiurl = "";
-        static string cfurl = "";
+        static string apiurl = ""; //full api url including all static parts
+        static string cfurl = ""; //url of the CurseForge website
         public override bool DownloadMods()
         {
+            if (cfurl == "" || apiurl == "")
+                return false;
+
             List<JsonElement> failedMods = new List<JsonElement>();
             int tryCount = 0;
 
@@ -366,6 +369,9 @@ namespace MCGet.Platforms
             HttpClient client = new HttpClient();
             client.Timeout = TimeSpan.FromSeconds(10);
 
+            if (cfurl == "" || apiurl == "")
+                return result;
+
             //get mod
             Task<string> getTask = client.GetStringAsync(apiurl + "/mods/search?gameId=432&slug=" + HttpUtility.UrlEncode(name));
 
@@ -489,6 +495,9 @@ namespace MCGet.Platforms
         public static async Task<SearchResult> SearchForProjects(string search)
         {
             SearchResult result = new SearchResult();
+
+            if (cfurl == "" || apiurl == "")
+                return result;
 
             HttpClient client = new HttpClient();
             client.DefaultRequestHeaders.UserAgent.ParseAdd(Program.api_user_agent);
