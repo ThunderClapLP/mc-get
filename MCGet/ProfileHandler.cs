@@ -19,7 +19,7 @@ namespace MCGet
         /// </summary>
         /// <param name="profilePath">Path to minecraft launcher json</param>
         /// <param name="number">Number of snapshot</param>
-        /// <returns>Full json file as string</returns>
+        /// <returns>True if successful</returns>
         public bool CreateSnapshot(string profilePath, SnapshotNumber number)
         {
             Snapshots[(int)number].Clear();
@@ -86,13 +86,41 @@ namespace MCGet
                 return false;
             try
             {
-                File.WriteAllText(profilePath, profileJson?.ToJsonString());
+                File.WriteAllText(profilePath, profileJson?.ToJsonString(new JsonSerializerOptions() {WriteIndented = true}));
             }
             catch (Exception)
             {
                 return false;
             }
             return true;
+        }
+
+        /// <summary>
+        /// Gets profiles by given loaderType and loaderVersion
+        /// </summary>
+        /// <param name="loaderType"></param>
+        /// <param name="loaderVersion"></param>
+        /// <returns>List of loaders (should be one but may be more in edge cases)</returns>
+        public List<string> GetProfilesByLoaderVersion(string loaderType, string loaderVersion)
+        {
+            List<string> ret = new List<string>();
+
+            if (profileJson != null)
+            {
+                try
+                {
+                    foreach (KeyValuePair<string, JsonNode?> profile in profileJson?["profiles"]?.AsObject().AsEnumerable() ?? new KeyValuePair<string, JsonNode?>[] {})
+                    {
+                        string? lastVersion = ((string?)profile.Value?["lastVersionId"])?.ToLower();
+                        if (lastVersion != null)
+                            if (lastVersion.StartsWith(loaderType.ToLower()) && lastVersion.Contains(loaderVersion.ToLower()))
+                                ret.Add(profile!.Key);
+                    }
+                }
+                catch(Exception) {}
+            }
+
+            return ret;
         }
 
         /// <summary>

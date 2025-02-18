@@ -317,14 +317,17 @@ namespace MCGet.Platforms
                 return true;
 
             //Get new profile by comparing the profile list from before with the one from after the modloader install. Does nothing if the modloader profile already existed before
-            string newProfile = ph.ComputeDifference().FirstOrDefault() ?? "";
+            string newProfile = ph.ComputeDifference().FirstOrDefault("");
+            ph.LoadProfiles(Program.minecraftDir + "/launcher_profiles.json");
+            if (newProfile == "") //try by version if difference failed. Installer propably overwrote a profile.
+                newProfile = ph.GetProfilesByLoaderVersion(modloaderVersion.Split("-")[0], modloaderVersion.Split("-")[1]).FirstOrDefault("");
+
             if (newProfile != "")
             {
                 //no error checks at the moment
-                ph.LoadProfiles(Program.minecraftDir + "/launcher_profiles.json");
                 if (this.name != "")
                     ph.SetProfileName(newProfile, this.name); //use modpack name as profile name
-                string newId = newProfile + "-" + new Random().Next(0, 10000);
+                string newId = newProfile + "-" + new Random().Next();
                 ph.SetProfieId(newProfile, newId);
                 ph.SaveProfiles(Program.minecraftDir + "/launcher_profiles.json");
                 Program.backup.log.modloaderProfile = newId;
