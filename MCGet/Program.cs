@@ -15,7 +15,9 @@ using MCGet.Platforms;
 using System.Reflection;
 using ConsoleTools;
 using System.Text.RegularExpressions;
+#if NET7_0_OR_GREATER
 using System.Formats.Tar;
+#endif
 
 namespace MCGet
 {
@@ -760,7 +762,14 @@ Examples:
                 if (System.OperatingSystem.IsWindows())
                     javaUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_x64_windows_hotspot_21.0.6_7.zip";
                 else if (System.OperatingSystem.IsLinux())
+                {
+#if NET7_0_OR_GREATER
                     javaUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_x64_linux_hotspot_21.0.6_7.tar.gz";
+#else
+                    CTools.WriteError("mc-get needs to be build for .net 7.0 or later to download java on linux!\nPlease manually install java 17 or later in your distribution.", 1);
+                    return false;
+#endif
+                }
                 else
                     return false; //system not compatable
                 Spinner spinner = new Spinner("Downloading Java", CTools.CursorTop);
@@ -778,17 +787,25 @@ Examples:
                         else if (System.OperatingSystem.IsLinux())
                         {
                             //file is a tar.gz on linux
+#if NET7_0_OR_GREATER
                             TarFile.ExtractToDirectory(
                                 new GZipStream(new FileStream(dir + tempDir + "java.zip", FileMode.Open, FileAccess.Read),
                                 CompressionMode.Decompress, leaveOpen: false),
                                 dir + "/java/", overwriteFiles: true);
 
                             //mark as executable on linux
-                            //TODO: use File.SetUnixFileModes when upgrading to dotnet 8
-                            Process chmodProc = new Process();
-                            chmodProc.StartInfo.FileName = "chmod";
-                            chmodProc.StartInfo.Arguments = "+x \"" + dir + "/java/jdk-21.0.6+7-jre/bin/java\"";
-                            chmodProc.Start();
+                            if (!File.GetUnixFileMode(dir + "/java/jdk-21.0.6+7-jre/bin/java").HasFlag(UnixFileMode.UserExecute))
+                                File.SetUnixFileMode(dir + "/java/jdk-21.0.6+7-jre/bin/java", UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute | UnixFileMode.SetUser);
+#else
+                            //mark as executable on linux
+                            //use File.SetUnixFileMode when using dotnet 8
+                            //Process chmodProc = new Process();
+                            //chmodProc.StartInfo.FileName = "chmod";
+                            //chmodProc.StartInfo.Arguments = "+x \"" + dir + "/java/jdk-21.0.6+7-jre/bin/java\"";
+                            //chmodProc.Start();
+                            CTools.WriteResult(false, spinner);
+                            return false;
+#endif
                         }
 
                     }
