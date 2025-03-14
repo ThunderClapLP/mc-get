@@ -162,6 +162,24 @@ namespace MCGet
         }
 
         /// <summary>
+        /// Set the directory where the installation is stored
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="path"></param>
+        /// <returns>True if successful</returns>
+        public bool SetProfileGameDirectory(string id, string path)
+        {
+            JsonNode? profile = profileJson?["profiles"]?[id];
+
+            if (profile == null)
+                return false;
+
+            profile["gameDir"] = path;
+
+            return true;
+        }
+
+        /// <summary>
         /// Completely remove profile given by id
         /// </summary>
         /// <param name="id"></param>
