@@ -15,7 +15,7 @@ namespace MCGet
         public List<BackupFile>? overrides { get; set; }
         public string archiveFile { get; set; } = "";
         public string? minecraftPath { get; set; }
-
+        public string? installationPath { get; set; }
         public string? versionId { get; set; }
         public string? modloaderProfile { get; set; }
     }

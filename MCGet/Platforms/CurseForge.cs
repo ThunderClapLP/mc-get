@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using ConsoleTools;
+using System.Data;
 
 namespace MCGet.Platforms
 {
@@ -67,7 +68,7 @@ namespace MCGet.Platforms
                             if (failedMods.Contains(file))
                                 failedMods.Remove(file);
 
-                            if (!Program.cFixMissing || Program.backup.IsModFailed(file.GetProperty("projectID").ToString() + ""))
+                            if (Program.backup.IsModFailed(file.GetProperty("projectID").ToString() + ""))
                             {
                                 if (!DownloadMod(file.GetProperty("projectID").ToString(), file.GetProperty("fileID").ToString(), Program.dir + Program.tempDir + "mods/", spinner))
                                 {

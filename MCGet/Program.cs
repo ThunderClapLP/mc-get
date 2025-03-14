@@ -23,11 +23,12 @@ namespace MCGet
 {
     public class Program
     {
-        public enum COMMANDS { NONE = 0,  INSTALL, SEARCH, RESTORE };
+        public enum COMMANDS { NONE = 0, INSTALL, SEARCH, LIST, REMOVE };
 
         public static string archPath = "";
         public static string dir = "";
         public static string minecraftDir = "";
+        public static string installDir = "";
         public static string tempDir = "/temp/";
         public static string backupDir = "/backup/";
         public static string archiveDir = "/archives/";
@@ -36,7 +37,6 @@ namespace MCGet
 
         //command line args
         public static bool cSilent = false;
-        public static bool cFixMissing = false;
         public static bool cServer = false;
         public static bool cModrinth = false;
         public static bool cCurseForge = false;
@@ -55,6 +55,7 @@ namespace MCGet
             } catch (Exception) {}
 
             bool invalidArgs = true;
+            string invalidArgsSuggestion = "(<archivepath> | install <slug>)";
             for (int i = 0; i < args.Length; i++)
             {
                 switch (args[i])
@@ -63,11 +64,6 @@ namespace MCGet
                     case "-s":
                         cSilent = true;
                         CTools.SilentMode = true;
-                        break;
-                    case "-f":
-                    case "--fix-missing":
-                        cFixMissing = true;
-                        invalidArgs = false;
                         break;
                     case "-h":
                     case "--help":
@@ -78,8 +74,7 @@ Usage:
 
 Flags:
     -h / --help         :  displays this help page
-    -s                  :  performs a silent install. No user input needed
-    -f / --fix-missing  :  retries to download failed mods
+    -s / --silent       :  performs a silent install. No user input needed
     -mr / --modrinth    :  download from modrinth
     -cf / --curseforge  :  download from curseforge
     -m <path>           :  specifies minecraft installation path
@@ -94,8 +89,13 @@ Commands:
     search <query>
         searches for modrinth projects
     
-    restore
-        deletes modpack and restores old state
+    list
+         installs       :  list all installed modpacks
+         mods (search)  :  list all custom mods in installation
+                           that fits the search term (either name or id)
+
+    remove
+        removes mod/modpack
     
 Examples:
     {ExecutableName} install sodium:0.6.6:fabric
@@ -103,7 +103,6 @@ Examples:
     {ExecutableName} install fabulously-optimized
     {ExecutableName} -s install fabulously-optimized
     {ExecutableName} Fabulously.Optimized-4.10.5.mrpack
-    {ExecutableName} restore
 ".Replace("{ExecutableName}", Assembly.GetExecutingAssembly().GetName().Name));
                         Environment.Exit(0);
                         break;
@@ -159,10 +158,30 @@ Examples:
                             }
                         }
                         break;
-                    case "restore":
-                        command = COMMANDS.RESTORE;
+                    case "list":
+                        if (i < args.Length - 1 && (args[i+1] == "mods" || args[i+1] == "installs"))
+                        {
+                            command = COMMANDS.LIST;
+                            commandParams.Clear();
+                            invalidArgs = false;
+                            for (int j = i + 1; j < args.Length; j++)
+                            {
+                                commandParams.Add(args[j]);
+                            }
+                        }
+                        else
+                        {
+                            invalidArgsSuggestion = "list installs/mods (search)";
+                        }
+                        break;
+                    case "remove":
+                        command = COMMANDS.REMOVE;
                         commandParams.Clear();
                         invalidArgs = false;
+                        for (int j = i + 1; j < args.Length; j++)
+                        {
+                            commandParams.Add(args[j]);
+                        }
                         break;
                     default:
                         if (args[i].ToLower().EndsWith(".zip") || args[i].ToLower().EndsWith(".mrpack"))
@@ -176,7 +195,7 @@ Examples:
 
             if (invalidArgs || args.Length <= 0)
             {
-                CTools.WriteLine("Usage: " + Assembly.GetExecutingAssembly().GetName().Name + " (<archivepath> | install <slug>)\n --help for all arguments");
+                CTools.WriteLine("Usage: " + Assembly.GetExecutingAssembly().GetName().Name + " " + invalidArgsSuggestion + "\n --help for all arguments");
                 if (OperatingSystem.IsWindows())
                 {
                     CTools.Write("Press any key to exit");
@@ -198,246 +217,229 @@ Examples:
 
 
             //prepare
-            if (command != COMMANDS.SEARCH) //skip on search
+            if (command != COMMANDS.SEARCH && command != COMMANDS.LIST) //skip on search
                 Prepare();
 
-            //restore backup
-            if (!cFixMissing)
+            Spinner spinner = new Spinner(CTools.CursorTop);
+            spinner.Update();
+            switch(command)
             {
-                Spinner spinner = new Spinner(CTools.CursorTop);
-                spinner.Update();
-                switch(command)
-                {
-                    case COMMANDS.INSTALL:
+                case COMMANDS.INSTALL:
+                    {
+                        string installLoader = "";
+                        string installGameVersion = cMCVersion;
+                        string installModVersion = "";
+                        string installName = commandParams[0].Split(":")[0];
+                        for (int j = 1; j < commandParams[0].Split(":").Length; j++)
                         {
-                            string installLoader = "";
-                            string installGameVersion = cMCVersion;
-                            string installModVersion = "";
-                            string installName = commandParams[0].Split(":")[0];
-                            for (int j = 1; j < commandParams[0].Split(":").Length; j++)
+                            if (new string[] {"forge", "neoforge", "fabric", "quilt"}.Any((e) => commandParams[0].Split(":")[j].ToLower() == e))
                             {
-                                if (new string[] {"forge", "neoforge", "fabric", "quilt"}.Any((e) => commandParams[0].Split(":")[j].ToLower() == e))
-                                {
-                                    installLoader = commandParams[0].Split(":")[j].ToLower();
-                                }
-                                else
-                                {
-                                    installModVersion = commandParams[0].Split(":")[j];
-                                }
+                                installLoader = commandParams[0].Split(":")[j].ToLower();
                             }
-                            if (installName != "")
+                            else
                             {
-                                Task<GetProjectResult>? mrResult = null;
-                                Task<GetProjectResult>? cfResult = null;
-                                if (cModrinth || (!cModrinth && !cCurseForge))
-                                    mrResult = Modrinth.GetProject(installName, installGameVersion, installModVersion, installLoader);
-                                if (cCurseForge || (!cModrinth && !cCurseForge))
-                                    cfResult = CurseForge.GetProject(installName, installGameVersion, installModVersion, installLoader);
-                                spinner.msg = "Getting project info";
-                                spinner.StartAnimation();
-                                mrResult?.Wait();
-                                cfResult?.Wait();
-                                spinner.StopAnimation();
-                                List<string>? urls = null;
+                                installModVersion = commandParams[0].Split(":")[j];
+                            }
+                        }
+                        if (installName != "")
+                        {
+                            Task<GetProjectResult>? mrResult = null;
+                            Task<GetProjectResult>? cfResult = null;
+                            if (cModrinth || (!cModrinth && !cCurseForge))
+                                mrResult = Modrinth.GetProject(installName, installGameVersion, installModVersion, installLoader);
+                            if (cCurseForge || (!cModrinth && !cCurseForge))
+                                cfResult = CurseForge.GetProject(installName, installGameVersion, installModVersion, installLoader);
+                            spinner.msg = "Getting project info";
+                            spinner.StartAnimation();
+                            mrResult?.Wait();
+                            cfResult?.Wait();
+                            spinner.StopAnimation();
+                            List<string>? urls = null;
 
-                                //CTools.WriteResult(true);
-                                if ((mrResult?.Result.success ?? false) && (cfResult?.Result.success ?? false))
+                            //CTools.WriteResult(true);
+                            if ((mrResult?.Result.success ?? false) && (cfResult?.Result.success ?? false))
+                            {
+                                CTools.WriteResult(true, spinner);
+                                char choice = CTools.ChoiceDialog("Install from (M)odrinth or (C)urseForge?", new char[] { 'm', 'c' }, 'm');
+                                if (choice == 'm')
                                 {
-                                    CTools.WriteResult(true, spinner);
-                                    char choice = CTools.ChoiceDialog("Install from (M)odrinth or (C)urseForge?", new char[] { 'm', 'c' }, 'm');
-                                    if (choice == 'm')
-                                    {
-                                        urls = mrResult.Result.urls;
-                                        extractedName = mrResult.Result.name;
-                                    }
-                                    else
-                                    {
-                                        urls = cfResult.Result.urls;
-                                        extractedName = cfResult.Result.name;
-                                    }
-                                }
-                                else if (mrResult?.Result.success ?? false)
-                                {
-                                    CTools.WriteResult(true, spinner);
                                     urls = mrResult.Result.urls;
                                     extractedName = mrResult.Result.name;
                                 }
-                                else if (cfResult?.Result.success ?? false)
+                                else
                                 {
-                                    CTools.WriteResult(true, spinner);
                                     urls = cfResult.Result.urls;
                                     extractedName = cfResult.Result.name;
                                 }
+                            }
+                            else if (mrResult?.Result.success ?? false)
+                            {
+                                CTools.WriteResult(true, spinner);
+                                urls = mrResult.Result.urls;
+                                extractedName = mrResult.Result.name;
+                            }
+                            else if (cfResult?.Result.success ?? false)
+                            {
+                                CTools.WriteResult(true, spinner);
+                                urls = cfResult.Result.urls;
+                                extractedName = cfResult.Result.name;
+                            }
 
-                                if (mrResult?.Result.error == GetProjectResult.ErrorCode.ConnectionFailed)
-                                    CTools.WriteError("Connection to Modrinth failed", 1);
-                                if (cfResult?.Result.error == GetProjectResult.ErrorCode.ConnectionFailed)
-                                    CTools.WriteError("Connection to CurseForge failed", 1);
+                            if (mrResult?.Result.error == GetProjectResult.ErrorCode.ConnectionFailed)
+                                CTools.WriteError("Connection to Modrinth failed", 1);
+                            if (cfResult?.Result.error == GetProjectResult.ErrorCode.ConnectionFailed)
+                                CTools.WriteError("Connection to CurseForge failed", 1);
 
-                                //download archive
-                                if (urls != null && urls[0] != "")
+                            //download archive
+                            if (urls != null && urls[0] != "")
+                            {
+                                if (urls[0].Split("|")[0] == "modpack")
                                 {
-                                    if (urls[0].Split("|")[0] == "modpack")
+                                    //modpack
+                                    urls[0] = urls[0].Split("|").Last(); //delete modloaders
+                                    spinner.top = CTools.CursorTop;
+                                    spinner.msg = "Downloading pack file";
+                                    if (!Networking.DownloadFile(urls[0], dir + archiveDir + Path.GetFileName(HttpUtility.UrlDecode(urls[0])), spinner))
                                     {
-                                        //modpack
-                                        urls[0] = urls[0].Split("|").Last(); //delete modloaders
-                                        spinner.top = CTools.CursorTop;
-                                        spinner.msg = "Downloading pack file";
-                                        if (!Networking.DownloadFile(urls[0], dir + archiveDir + Path.GetFileName(HttpUtility.UrlDecode(urls[0])), spinner))
+                                        CTools.WriteResult(false, spinner);
+                                        Environment.Exit(0);
+                                        return;
+                                    }
+
+                                    archPath = dir + archiveDir + Path.GetFileName(HttpUtility.UrlDecode(urls[0]));
+                                    CTools.WriteResult(true, spinner);
+                                }
+                                else if (urls[0].Split("|")[0] == "mod")
+                                {
+                                    //single mod
+                                    CTools.WriteError("Single mod:", 0);
+                                    CTools.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(urls[0].Split("|").Last())));
+                                    if (urls.Count > 1)
+                                    {
+                                        CTools.WriteLine("With dependencies:");
+                                        for (int i = 1; i < urls.Count; i++)
+                                        {
+                                            CTools.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(urls[i].Split("|").Last())));
+                                        }
+                                    }
+                                    CTools.WriteError("Compatible modloaders: " + urls[0].Split("|")[1], 0);
+                                    urls[0] = urls[0].Split("|").Last();
+                                    if (!CTools.ConfirmDialog("Install single mod", true))
+                                    {
+                                        //user canceled
+                                        Environment.Exit(0);
+                                        return;
+                                    }
+                                    spinner.top = CTools.CursorTop;
+                                    spinner.msg = "Downloading single mod";
+                                    for (int i = 0; i < urls.Count; i++)
+                                    {
+                                        if (!Networking.DownloadFile(urls[i], dir + tempDir + "mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), spinner))
                                         {
                                             CTools.WriteResult(false, spinner);
                                             Environment.Exit(0);
                                             return;
                                         }
-
-                                        archPath = dir + archiveDir + Path.GetFileName(HttpUtility.UrlDecode(urls[0]));
-                                        CTools.WriteResult(true, spinner);
                                     }
-                                    else if (urls[0].Split("|")[0] == "mod")
+
+                                    CTools.WriteResult(true, spinner);
+
+                                    //copy mod
+
+                                    CTools.Write("Copy mod");
+                                    for (int i = 0; i < urls.Count; i++)
                                     {
-                                        //single mod
-                                        CTools.WriteError("Single mod:", 0);
-                                        CTools.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(urls[0].Split("|").Last())));
-                                        if (urls.Count > 1)
+                                        try
                                         {
-                                            CTools.WriteLine("With dependencies:");
-                                            for (int i = 1; i < urls.Count; i++)
-                                            {
-                                                CTools.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(urls[i].Split("|").Last())));
-                                            }
+                                            File.Copy(dir + tempDir + "mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), minecraftDir + "/mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), true);
                                         }
-                                        CTools.WriteError("Compatible modloaders: " + urls[0].Split("|")[1], 0);
-                                        urls[0] = urls[0].Split("|").Last();
-                                        if (!CTools.ConfirmDialog("Install single mod", true))
+                                        catch
                                         {
-                                            //user canceled
+                                            CTools.WriteResult(false);
                                             Environment.Exit(0);
                                             return;
                                         }
-                                        spinner.top = CTools.CursorTop;
-                                        spinner.msg = "Downloading single mod";
-                                        for (int i = 0; i < urls.Count; i++)
-                                        {
-                                            if (!Networking.DownloadFile(urls[i], dir + tempDir + "mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), spinner))
-                                            {
-                                                CTools.WriteResult(false, spinner);
-                                                Environment.Exit(0);
-                                                return;
-                                            }
-                                        }
-
-                                        CTools.WriteResult(true, spinner);
-
-                                        //copy mod
-
-                                        CTools.Write("Copy mod");
-                                        for (int i = 0; i < urls.Count; i++)
-                                        {
-                                            try
-                                            {
-                                                File.Copy(dir + tempDir + "mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), minecraftDir + "/mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), true);
-                                            }
-                                            catch
-                                            {
-                                                CTools.WriteResult(false);
-                                                Environment.Exit(0);
-                                                return;
-                                            }
-                                        }
-
-                                        CTools.WriteResult(true);
-                                        Environment.Exit(0);
-                                        return;
-
                                     }
-                                    else
-                                    {
-                                        //unknown
-                                        CTools.WriteError("Unknown project type: " + urls[0].Split("|")[0]);
-                                        Environment.Exit(1);
-                                        return;
-                                    }
+
+                                    CTools.WriteResult(true);
+                                    Environment.Exit(0);
+                                    return;
+
                                 }
                                 else
                                 {
-                                    CTools.WriteResult(false, spinner);
-                                    if ((mrResult?.Result.error == GetProjectResult.ErrorCode.NotFound) || (cfResult?.Result.error == GetProjectResult.ErrorCode.NotFound))
-                                        CTools.WriteError("No project with slug or id '" + installName + "' was found" + (installGameVersion != "" ? (" for version " + installGameVersion) : ""));
+                                    //unknown
+                                    CTools.WriteError("Unknown project type: " + urls[0].Split("|")[0]);
                                     Environment.Exit(1);
                                     return;
                                 }
                             }
+                            else
+                            {
+                                CTools.WriteResult(false, spinner);
+                                if ((mrResult?.Result.error == GetProjectResult.ErrorCode.NotFound) || (cfResult?.Result.error == GetProjectResult.ErrorCode.NotFound))
+                                    CTools.WriteError("No project with slug or id '" + installName + "' was found" + (installGameVersion != "" ? (" for version " + installGameVersion) : ""));
+                                Environment.Exit(1);
+                                return;
+                            }
                         }
-                        break;
-                    case COMMANDS.SEARCH:
+                    }
+                    break;
+                case COMMANDS.SEARCH:
+                    {
+                        CTools.Write("Searching for Projects");
+                        spinner.StartAnimation();
+                        Task<SearchResult> mrResult = Modrinth.SearchForProjects(string.Join(" ", commandParams));
+                        Task<SearchResult> cfResult = CurseForge.SearchForProjects(string.Join(" ", commandParams));
+                        mrResult.Wait();
+                        spinner.StopAnimation();
+                        spinner.Clean();
+                        CTools.ClearLine();
+                        if (mrResult.Result.success && mrResult.Result.results.Count > 0)
                         {
-                            CTools.Write("Searching for Projects");
-                            spinner.StartAnimation();
-                            Task<SearchResult> mrResult = Modrinth.SearchForProjects(string.Join(" ", commandParams));
-                            Task<SearchResult> cfResult = CurseForge.SearchForProjects(string.Join(" ", commandParams));
-                            mrResult.Wait();
-                            spinner.StopAnimation();
-                            spinner.Clean();
-                            CTools.ClearLine();
-                            if (mrResult.Result.success && mrResult.Result.results.Count > 0)
-                            {
-                                    CTools.WriteLine("Modrinth projects:");
-                                mrResult.Result.results.ForEach((s) => CTools.WriteLine(" " + s));
-                            }
-                            CTools.Write("Searching for Projects");
-                            spinner.top = CTools.CursorTop;
-                            spinner.StartAnimation();
-                            cfResult.Wait();
-                            spinner.StopAnimation();
-                            spinner.Clean();
-                            CTools.ClearLine();
-                            if (cfResult.Result.success && cfResult.Result.results.Count > 0)
-                            {
-                                CTools.WriteLine("CurseForge projects:");
-                                cfResult.Result.results.ForEach((s) => CTools.WriteLine(" " + s));
-                            }
-                            if (!mrResult.Result.success && !cfResult.Result.success)
-                                CTools.WriteResult(false);
+                                CTools.WriteLine("Modrinth projects:");
+                            mrResult.Result.results.ForEach((s) => CTools.WriteLine(" " + s));
+                        }
+                        CTools.Write("Searching for Projects");
+                        spinner.top = CTools.CursorTop;
+                        spinner.StartAnimation();
+                        cfResult.Wait();
+                        spinner.StopAnimation();
+                        spinner.Clean();
+                        CTools.ClearLine();
+                        if (cfResult.Result.success && cfResult.Result.results.Count > 0)
+                        {
+                            CTools.WriteLine("CurseForge projects:");
+                            cfResult.Result.results.ForEach((s) => CTools.WriteLine(" " + s));
+                        }
+                        if (!mrResult.Result.success && !cfResult.Result.success)
+                            CTools.WriteResult(false);
 
-                            if (mrResult.Result.results.Count == 0 && cfResult.Result.results.Count == 0)
-                                CTools.WriteLine("No projects found!");
-                            Environment.Exit(0);
-                        }
-                        break;
-                    case COMMANDS.RESTORE:
-                        RestoreBackup();
-                        CTools.WriteLine();
-                        CTools.WriteLine("Success!");
-                        if (OperatingSystem.IsWindows())
-                        {
-                            CTools.Write(" Press any key to exit");
-                            Console.ReadKey();
-                        }
+                        if (mrResult.Result.results.Count == 0 && cfResult.Result.results.Count == 0)
+                            CTools.WriteLine("No projects found!");
                         Environment.Exit(0);
-                        break;
-                }
-
-                RestoreBackup();
-
-                CTools.Write("Cleaning up");
-                if (backup.Clean())
-                    CTools.WriteResult(true);
-                else
-                    CTools.WriteResult(false);
-
-                if (archPath != "")
-                    CopyArchive();
+                    }
+                    break;
+                case COMMANDS.LIST:
+                    CTools.WriteLine("TODO: implement");
+                    Environment.Exit(0);
+                    break;
+                case COMMANDS.REMOVE:
+                    CTools.WriteLine("TODO: implement");
+                    Environment.Exit(0);
+                    break;
             }
+
+            RestoreBackup();
+
+            CTools.Write("Cleaning up");
+            if (backup.Clean())
+                CTools.WriteResult(true);
             else
-            {
-                if (Path.IsPathRooted(backup.log.archiveFile))
-                {
-                    archPath = backup.log.archiveFile; //absolute path for backwardscompatibility
-                } else
-                {
-                    archPath = dir + archiveDir + backup.log.archiveFile;
-                }
-            }
+                CTools.WriteResult(false);
+
+            if (archPath != "")
+                CopyArchive();
             //backup.log.archiveFile = archPath;
 
             //extract
@@ -504,11 +506,11 @@ Examples:
             //perform install
             platform.InstallMods();
 
-            if (!cFixMissing)
-                CopyOverrides();
+            CopyOverrides();
 
             //if (!cServer) //do not backup on server
-            backup.Save();
+            //do not save backup at all
+            //backup.Save();
 
             CTools.Write("Cleaning up");
             try
@@ -556,19 +558,17 @@ Examples:
 
             if (!cServer)
             {
+                bool confirmed = false;
                 //try backup minecraft path
                 if (minecraftDir == "")
                 {
                     minecraftDir = backup.log.minecraftPath + "";
+                    if (Directory.Exists(minecraftDir))
+                        confirmed = true; //don't ask user to confirm if configured already
                 }
 
                 if (minecraftDir == "")
                 {
-                    if (cFixMissing)
-                    {
-                        CTools.WriteError("Minecraft directory not found!");
-                        Environment.Exit(0);
-                    }
                     if (System.OperatingSystem.IsWindows())
                     {
                         if (Directory.Exists(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/.minecraft"))
@@ -585,14 +585,13 @@ Examples:
                         minecraftDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/Library/Application Support/minecraft";
                     }
                 }
-                bool confirmed = false;
                 while (!confirmed)
                 {
                     if (!Directory.Exists(minecraftDir) || !Directory.Exists(minecraftDir + "/versions"))
                     {
                         CTools.WriteError("Minecraft directory not found!");
 
-                        if (cSilent || cFixMissing)
+                        if (cSilent)
                             Environment.Exit(0);
 
                         confirmed = false;
@@ -601,10 +600,7 @@ Examples:
                     {
                         minecraftDir = Path.GetFullPath(minecraftDir);
                         CTools.WriteLine("Minecraft Directory Found: " + minecraftDir);
-                        if (!cFixMissing)
-                            confirmed = CTools.ConfirmDialog("Use this Directory?", true);
-                        else
-                            confirmed = true;
+                        confirmed = CTools.ConfirmDialog("Use this Directory?", true);
 
                     }
                     if (!confirmed)
@@ -854,26 +850,24 @@ Examples:
                         CTools.WriteResult(true, spinner);
                     }
 
-                    if (!cFixMissing)
+                    //TODO: decide what to do here. Force to delete?
+                    CTools.WriteError("Mods directory is not empty.", 1);
+                    try
                     {
-                        CTools.WriteError("Mods directory is not empty.", 1);
-                        try
+                        if (CTools.ConfirmDialog("Delete ALL existing mods?", true))
                         {
-                            if (CTools.ConfirmDialog("Delete ALL existing mods?", true))
-                            {
-                                if (Directory.Exists(modsDir))
-                                    Directory.Delete(modsDir, true);
-                                if (File.Exists(modsDir))
-                                    File.Delete(modsDir);
+                            if (Directory.Exists(modsDir))
+                                Directory.Delete(modsDir, true);
+                            if (File.Exists(modsDir))
+                                File.Delete(modsDir);
 
-                            }
                         }
-                        catch (Exception)
-                        {
-                            CTools.WriteError("Deletion failed");
-                            RevertChanges();
-                            return;
-                        }
+                    }
+                    catch (Exception)
+                    {
+                        CTools.WriteError("Deletion failed");
+                        RevertChanges();
+                        return;
                     }
                 }
             }
@@ -969,7 +963,7 @@ Examples:
                 {
                     CTools.WriteResult(false);
                     CTools.WriteError("An error occured while restoring! Some files might be missing", 1);
-                    if (command == COMMANDS.RESTORE || !CTools.ConfirmDialog("Continue anyway?", true))
+                    if (!CTools.ConfirmDialog("Continue anyway?", true))
                     {
                         System.Environment.Exit(0);
                         return;
@@ -988,15 +982,12 @@ Examples:
         public static void RevertChanges()
         {
             CTools.WriteError("Failed to install");
-            if (!cFixMissing)
-            {
-                RestoreBackup();
-                CTools.Write("Cleaning up");
-                if (backup.Clean())
-                    CTools.WriteResult(true);
-                else
-                    CTools.WriteResult(false);
-            }
+            RestoreBackup();
+            CTools.Write("Cleaning up");
+            if (backup.Clean())
+                CTools.WriteResult(true);
+            else
+                CTools.WriteResult(false);
             System.Environment.Exit(1);
         }
 

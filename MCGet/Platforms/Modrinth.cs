@@ -38,7 +38,7 @@ namespace MCGet.Platforms
                     if (failedMods.Contains(file))
                         failedMods.Remove(file);
 
-                    if (!Program.cFixMissing || Program.backup.IsModFailed(file.GetProperty("hashes").GetProperty("sha512").ToString() + ""))
+                    if (Program.backup.IsModFailed(file.GetProperty("hashes").GetProperty("sha512").ToString() + ""))
                     {
                         //make sure to only download mods for specified environment (server / client)
                         JsonElement? currElem = file.GetOrNull("env")?.GetOrNull(Program.cServer ? "server": "client");
