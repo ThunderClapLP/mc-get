@@ -75,6 +75,12 @@ namespace ConsoleTools
             lock(ConsoleLock) Console.WriteLine(value);
         }
 
+        public static void WriteLine(string? value)
+        {
+            value ??= "";
+            lock (ConsoleLock) Console.WriteLine(value);
+        }
+
         public static void WriteLine(string format, params object[] list)
         {
             lock(ConsoleLock) Console.WriteLine(format, list);
@@ -88,6 +94,12 @@ namespace ConsoleTools
         {
             value ??= "";
             lock(ConsoleLock) Console.Write(value);
+        }
+
+        public static void Write(string? value)
+        {
+            value ??= "";
+            lock (ConsoleLock) Console.Write(value);
         }
 
         public static void Write(string format, params object[] list)
@@ -249,6 +261,37 @@ namespace ConsoleTools
                 }
             }
             return defaultRes;
+        }
+
+        public static int ListDialog(string prompt, IEnumerable<string> list)
+        {
+            if (SilentMode)
+                return -1;
+            
+            int ret = 0;
+            lock (ConsoleLock)
+            {
+
+                int i = 1;
+                foreach (string item in list)
+                {
+                    Console.WriteLine(" " + (i++) + ") " + item);
+                }
+
+                bool valid = false;
+                while (!valid)
+                {
+                    Console.Write(prompt + ": ");
+                    String input = Console.ReadLine() ?? "";
+
+                    if (int.TryParse(input, out ret) && ret - 1 < list.Count() && ret - 1 >= 0)
+                        valid = true;
+                    else
+                        Console.WriteLine("Illegal Input");
+                }
+            }
+
+            return ret - 1;
         }
 
         public static int DockRight()
