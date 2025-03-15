@@ -40,9 +40,9 @@ namespace MCGet.ModLoaders
             Process neoforge = new Process();
             neoforge.StartInfo.FileName = javaPath + "java";
             if (!Program.cServer)
-                neoforge.StartInfo.Arguments = "-jar \"" + Program.dir + Program.tempDir + Path.GetFileName(forgeFullUrl) + "\" --install-client \"" + Program.minecraftDir + "\"";
+                neoforge.StartInfo.Arguments = "-jar \"" + Program.dir + Program.tempDir + Path.GetFileName(forgeFullUrl) + "\" --install-client \"" + Program.insManager.currInstallation.minecraftDir + "\"";
             else
-                neoforge.StartInfo.Arguments = "-jar \"" + Program.dir + Program.tempDir + Path.GetFileName(forgeFullUrl) + "\" --InstallServer \"" + Program.minecraftDir + "\"";
+                neoforge.StartInfo.Arguments = "-jar \"" + Program.dir + Program.tempDir + Path.GetFileName(forgeFullUrl) + "\" --InstallServer \"" + InstallationManager.LocalToGlobalPath(Program.insManager.currInstallation.installationDir) + "\"";
             neoforge.StartInfo.WorkingDirectory = Program.dir + Program.tempDir;
 
             neoforge.StartInfo.RedirectStandardOutput = true;

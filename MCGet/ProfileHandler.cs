@@ -109,7 +109,7 @@ namespace MCGet
             {
                 try
                 {
-                    foreach (KeyValuePair<string, JsonNode?> profile in profileJson?["profiles"]?.AsObject().AsEnumerable() ?? new KeyValuePair<string, JsonNode?>[] {})
+                    foreach (KeyValuePair<string, JsonNode?> profile in profileJson?["profiles"]?.AsObject().AsEnumerable() ?? Array.Empty<KeyValuePair<string, JsonNode?>>())
                     {
                         string? lastVersion = ((string?)profile.Value?["lastVersionId"])?.ToLower();
                         if (lastVersion != null)
@@ -128,14 +128,38 @@ namespace MCGet
         /// </summary>
         /// <param name="id"></param>
         /// <param name="newName"></param>
+        /// <param name="unique"></param>
         /// <returns>True if successful</returns>
-        public bool SetProfileName(string id, string newName)
+        public bool SetProfileName(string id, string newName, bool unique = false)
         {
             JsonNode? profile = profileJson?["profiles"]?[id];
 
             if (profile == null)
                 return false;
 
+            if (unique)
+            {
+                bool contains = false;
+                int count = 0;
+                string name = newName;
+                do
+                {
+                    contains = false;
+                    foreach (KeyValuePair<string, JsonNode?> prof in profileJson?["profiles"]?.AsObject().AsEnumerable() ?? Array.Empty<KeyValuePair<string, JsonNode?>>())
+                    {
+                        if (prof.Value != null)
+                        {
+                            if ((string?)prof.Value["name"] == name)
+                            {
+                                contains = true;
+                                count++;
+                                name = newName + "(" + count + ")";
+                            }
+                        }
+                    }
+                } while (contains);
+                newName = name;
+            }
             profile!["name"] = newName;
             return true;
             

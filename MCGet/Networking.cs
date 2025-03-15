@@ -16,7 +16,7 @@ namespace MCGet
         public static bool DownloadFile(string url, string targetPath, Spinner? spinner = null)
         {
             using HttpClient client = new HttpClient();
-            if (Program.archPath.EndsWith(".mrpack"))
+            if (Program.insManager.currInstallation.archivePath.EndsWith(".mrpack"))
             {
                 //only use useragent with modrinth
                 client.DefaultRequestHeaders.UserAgent.ParseAdd(Program.api_user_agent);

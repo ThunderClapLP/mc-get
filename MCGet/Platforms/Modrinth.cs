@@ -38,17 +38,14 @@ namespace MCGet.Platforms
                     if (failedMods.Contains(file))
                         failedMods.Remove(file);
 
-                    if (Program.backup.IsModFailed(file.GetProperty("hashes").GetProperty("sha512").ToString() + ""))
+                    //make sure to only download mods for specified environment (server / client)
+                    JsonElement? currElem = file.GetOrNull("env")?.GetOrNull(Program.cServer ? "server": "client");
+                    if (currElem == null || currElem?.ToString() != "unsupported")
                     {
-                        //make sure to only download mods for specified environment (server / client)
-                        JsonElement? currElem = file.GetOrNull("env")?.GetOrNull(Program.cServer ? "server": "client");
-                        if (currElem == null || currElem?.ToString() != "unsupported")
+                        if (!files.Any(x => x.GetOrNull("path")?.GetString() == file.GetOrNull("path")?.GetString())) //check if file with same path already exists in list
                         {
-                            if (!files.Any(x => x.GetOrNull("path")?.GetString() == file.GetOrNull("path")?.GetString())) //check if file with same path already exists in list
-                            {
-                                files.Add(file);
-                                requiredSpace += file.GetOrNull("fileSize")?.GetInt64() / 1024 ?? 0; //convert to kilobytes
-                            }
+                            files.Add(file);
+                            requiredSpace += file.GetOrNull("fileSize")?.GetInt64() / 1024 ?? 0; //convert to kilobytes
                         }
                     }
                 }
@@ -56,7 +53,7 @@ namespace MCGet.Platforms
                 //get free space on disc
                 try
                 {
-                    long freeSpace = Math.Min(new DriveInfo(Program.dir).AvailableFreeSpace / 1024, new DriveInfo(Program.minecraftDir).AvailableFreeSpace / 1024);
+                    long freeSpace = Math.Min(new DriveInfo(Program.dir).AvailableFreeSpace / 1024, new DriveInfo(InstallationManager.LocalToGlobalPath(Program.insManager.currInstallation.installationDir)).AvailableFreeSpace / 1024);
 
                     if (requiredSpace > freeSpace - 10000) { //10MB buffer to prevent issues
                         CTools.WriteError("Not enough disk space! " + Math.Max((requiredSpace - freeSpace - 10000) / 1024, 1) + " MB more requiered.");
@@ -180,30 +177,36 @@ namespace MCGet.Platforms
 
 
             ProfileHandler ph = new ProfileHandler();
-            ph.CreateSnapshot(Program.minecraftDir + "/launcher_profiles.json", ProfileHandler.SnapshotNumber.FIRST);
+            ph.CreateSnapshot(Program.insManager.currInstallation.minecraftDir + "/launcher_profiles.json", ProfileHandler.SnapshotNumber.FIRST);
 
             bool success = modLoader?.Install(Program.manifestDoc?.RootElement.GetProperty("dependencies").GetProperty("minecraft").GetString() ?? "", modloaderVersion) ?? false;
             
-            ph.CreateSnapshot(Program.minecraftDir + "/launcher_profiles.json", ProfileHandler.SnapshotNumber.SECOND);
+            ph.CreateSnapshot(Program.insManager.currInstallation.minecraftDir + "/launcher_profiles.json", ProfileHandler.SnapshotNumber.SECOND);
 
             if (Program.cServer)
                 return true;
-                
+
+            ph.LoadProfiles(Program.insManager.currInstallation.minecraftDir + "/launcher_profiles.json");
+            //remove old profile
+            if (Program.modifyExisting && Program.insManager.currInstallation.modloaderProfile != null)
+                ph.RemoveProfile(Program.insManager.currInstallation.modloaderProfile);
+
             //Get new profile by comparing the profile list from before with the one from after the modloader install. Does nothing if the modloader profile already existed before
-            string newProfile = ph.ComputeDifference().First() ?? "";
-            ph.LoadProfiles(Program.minecraftDir + "/launcher_profiles.json");
+            string newProfile = ph.ComputeDifference().FirstOrDefault() ?? "";
             if (newProfile == "") //try by version if difference failed. Installer propably overwrote a profile.
-                newProfile = ph.GetProfilesByLoaderVersion(modloaderVersion.Split("-")[0], modloaderVersion.Split("-")[1]).First() ?? "";
+                newProfile = ph.GetProfilesByLoaderVersion(modloaderVersion.Split("-")[0], modloaderVersion.Split("-")[1]).FirstOrDefault() ?? "";
 
             if (newProfile != "")
             {
                 //no error checks at the moment
                 if (this.name != "")
-                    ph.SetProfileName(newProfile, this.name); //use modpack name as profile name
-                string newId = newProfile + "-" + new Random().Next();
+                    ph.SetProfileName(newProfile, this.name, true); //use modpack name as profile name
+                ph.SetProfileGameDirectory(newProfile, InstallationManager.LocalToGlobalPath(Program.insManager.currInstallation.installationDir));
+                string newId = Program.insManager.currInstallation.Id ?? new Random().Next().ToString(); //newProfile + "-" + new Random().Next();
                 ph.SetProfieId(newProfile, newId);
-                ph.SaveProfiles(Program.minecraftDir + "/launcher_profiles.json");
+                ph.SaveProfiles(Program.insManager.currInstallation.minecraftDir + "/launcher_profiles.json");
                 Program.backup.log.modloaderProfile = newId;
+                Program.insManager.currInstallation.modloaderProfile = newId;
             }
 
             return success;
@@ -244,6 +247,10 @@ namespace MCGet.Platforms
                 result.error = GetProjectResult.ErrorCode.NotFound;
                 return result;
             }
+
+            //get title and slug
+            result.name = doc.RootElement.GetProperty("title").GetString() ?? "";
+            result.slug = doc.RootElement.GetProperty("slug").GetString() ?? "";
 
             //get all versions
             getTask = client.GetStringAsync(url + "/project/" + HttpUtility.UrlEncode(name) + "/version");

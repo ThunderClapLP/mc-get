@@ -27,6 +27,7 @@ namespace MCGet.Platforms
         public ErrorCode error = ErrorCode.None;
         public List<string> urls = new List<string>();
         public string name = "";
+        public string slug = "";
     }
 
     public abstract class Platform
@@ -39,7 +40,8 @@ namespace MCGet.Platforms
 
         public virtual bool InstallMods()
         {
-            string modsDir = Path.GetFullPath(Program.minecraftDir + "/mods");
+            string modsDir = Path.GetFullPath(Program.insManager.currInstallation.installationDir + "/mods");
+            string absDestPath = InstallationManager.LocalToGlobalPath(Program.insManager.currInstallation.installationDir);
 
             CTools.Write("Copying mods");
             ProgressBar bar = new ProgressBar(0, CTools.DockRight());
@@ -56,15 +58,15 @@ namespace MCGet.Platforms
             {
                 foreach (string file in downloadedMods)
                 {
-                    if (Path.GetDirectoryName(Program.minecraftDir + "/" + file) != null && !Directory.Exists(Path.GetDirectoryName(Program.minecraftDir + "/" + file)))
+                    if (Path.GetDirectoryName(absDestPath + "/" + file) != null && !Directory.Exists(Path.GetDirectoryName(absDestPath + "/" + file)))
                     {
-                        Directory.CreateDirectory(Path.GetDirectoryName(Program.minecraftDir + "/" + file)!);
+                        Directory.CreateDirectory(Path.GetDirectoryName(absDestPath + "/" + file)!);
                     }
 
                     if (file.StartsWith("mods/") && !File.Exists(modsDir + "/" + Path.GetFileName(file)))
                         Program.backup.BackopMod(modsDir + "/" + Path.GetFileName(file), false);
 
-                    File.Move(Program.dir + Program.tempDir + "mods/" + file, Program.minecraftDir + "/" + file, true);
+                    File.Move(Program.dir + Program.tempDir + "mods/" + file, absDestPath + "/" + file, true);
                     bar.value++;
                     bar.Update();
 

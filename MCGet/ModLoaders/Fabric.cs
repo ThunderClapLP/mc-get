@@ -51,9 +51,9 @@ namespace MCGet.ModLoaders
             Process fabric = new Process();
             fabric.StartInfo.FileName = javaPath + "java";
             if (!Program.cServer)
-                fabric.StartInfo.Arguments = "-jar \"" + Program.dir + Program.tempDir + Path.GetFileName(url) + "\" client -mcversion " + minecraftVersion + " -loader" + loaderVersion + " -dir \"" + Program.minecraftDir + "\"";
+                fabric.StartInfo.Arguments = "-jar \"" + Program.dir + Program.tempDir + Path.GetFileName(url) + "\" client -mcversion " + minecraftVersion + " -loader" + loaderVersion + " -dir \"" + Program.insManager.currInstallation.minecraftDir + "\"";
             else
-                fabric.StartInfo.Arguments = "-jar \"" + Program.dir + Program.tempDir + Path.GetFileName(url) + "\" server -mcversion " + minecraftVersion + " -loader" + loaderVersion + " -dir \"" + Program.minecraftDir + "\" -downloadMinecraft";
+                fabric.StartInfo.Arguments = "-jar \"" + Program.dir + Program.tempDir + Path.GetFileName(url) + "\" server -mcversion " + minecraftVersion + " -loader" + loaderVersion + " -dir \"" + InstallationManager.LocalToGlobalPath(Program.insManager.currInstallation.installationDir) + "\" -downloadMinecraft";
             fabric.StartInfo.WorkingDirectory = Program.dir + Program.tempDir;
 
             fabric.StartInfo.RedirectStandardOutput = true;

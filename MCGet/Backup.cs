@@ -275,9 +275,9 @@ namespace MCGet
             if (log.modloaderProfile == null || log.modloaderProfile == "")
                 return false;
             ProfileHandler ph = new ProfileHandler();
-            ph.LoadProfiles(Program.minecraftDir + "/launcher_profiles.json");
+            ph.LoadProfiles(Program.insManager.currInstallation.minecraftDir + "/launcher_profiles.json");
             bool result = ph.RemoveProfile(log.modloaderProfile);
-            if (!ph.SaveProfiles(Program.minecraftDir + "/launcher_profiles.json"))
+            if (!ph.SaveProfiles(Program.insManager.currInstallation.minecraftDir + "/launcher_profiles.json"))
                 result = false;
             return result;
         }

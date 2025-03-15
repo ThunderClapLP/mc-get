@@ -45,7 +45,7 @@ namespace MCGet.ModLoaders
                 if (!Program.cServer)
                     forge.StartInfo.Arguments = "-jar \"" + Program.dir + Program.tempDir + Path.GetFileName(forgeFullUrl) + "\"";
                 else
-                    forge.StartInfo.Arguments = "-jar \"" + Program.dir + Program.tempDir + Path.GetFileName(forgeFullUrl) + "\" --InstallServer \"" + Program.minecraftDir + "\"";
+                    forge.StartInfo.Arguments = "-jar \"" + Program.dir + Program.tempDir + Path.GetFileName(forgeFullUrl) + "\" --InstallServer \"" + InstallationManager.LocalToGlobalPath(Program.insManager.currInstallation.installationDir) + "\"";
                 forge.StartInfo.WorkingDirectory = Program.dir + Program.tempDir;
 
                 //NOTE: forge installer somehow fails with redirected output

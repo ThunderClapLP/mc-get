@@ -68,13 +68,10 @@ namespace MCGet.Platforms
                             if (failedMods.Contains(file))
                                 failedMods.Remove(file);
 
-                            if (Program.backup.IsModFailed(file.GetProperty("projectID").ToString() + ""))
+                            if (!DownloadMod(file.GetProperty("projectID").ToString(), file.GetProperty("fileID").ToString(), Program.dir + Program.tempDir + "mods/", spinner))
                             {
-                                if (!DownloadMod(file.GetProperty("projectID").ToString(), file.GetProperty("fileID").ToString(), Program.dir + Program.tempDir + "mods/", spinner))
-                                {
-                                    failedMods.Add(file);
-                                    failcount++;
-                                }
+                                failedMods.Add(file);
+                                failcount++;
                             }
                             bar.value++;
                             bar.Update();
@@ -311,18 +308,22 @@ namespace MCGet.Platforms
 
 
             ProfileHandler ph = new ProfileHandler();
-            ph.CreateSnapshot(Program.minecraftDir + "/launcher_profiles.json", ProfileHandler.SnapshotNumber.FIRST);
+            ph.CreateSnapshot(Program.insManager.currInstallation.minecraftDir + "/launcher_profiles.json", ProfileHandler.SnapshotNumber.FIRST);
 
             bool success = modLoader?.Install(Program.manifestDoc?.RootElement.GetProperty("minecraft").GetProperty("version").GetString() ?? "", modloaderVersion) ?? false;
 
-            ph.CreateSnapshot(Program.minecraftDir + "/launcher_profiles.json", ProfileHandler.SnapshotNumber.SECOND);
+            ph.CreateSnapshot(Program.insManager.currInstallation.minecraftDir + "/launcher_profiles.json", ProfileHandler.SnapshotNumber.SECOND);
 
             if (Program.cServer)
                 return true;
 
+            ph.LoadProfiles(Program.insManager.currInstallation.minecraftDir + "/launcher_profiles.json");
+            //remove old profile
+            if (Program.modifyExisting && Program.insManager.currInstallation.modloaderProfile != null)
+                ph.RemoveProfile(Program.insManager.currInstallation.modloaderProfile);
+
             //Get new profile by comparing the profile list from before with the one from after the modloader install. Does nothing if the modloader profile already existed before
             string newProfile = ph.ComputeDifference().FirstOrDefault("");
-            ph.LoadProfiles(Program.minecraftDir + "/launcher_profiles.json");
             if (newProfile == "") //try by version if difference failed. Installer propably overwrote a profile.
                 newProfile = ph.GetProfilesByLoaderVersion(modloaderVersion.Split("-")[0], modloaderVersion.Split("-")[1]).FirstOrDefault("");
 
@@ -330,11 +331,13 @@ namespace MCGet.Platforms
             {
                 //no error checks at the moment
                 if (this.name != "")
-                    ph.SetProfileName(newProfile, this.name); //use modpack name as profile name
-                string newId = newProfile + "-" + new Random().Next();
+                    ph.SetProfileName(newProfile, this.name, true); //use modpack name as profile name
+                ph.SetProfileGameDirectory(newProfile, InstallationManager.LocalToGlobalPath(Program.insManager.currInstallation.installationDir));
+                string newId = Program.insManager.currInstallation.Id ?? new Random().Next().ToString(); //newProfile + "-" + new Random().Next();
                 ph.SetProfieId(newProfile, newId);
-                ph.SaveProfiles(Program.minecraftDir + "/launcher_profiles.json");
+                ph.SaveProfiles(Program.insManager.currInstallation.minecraftDir + "/launcher_profiles.json");
                 Program.backup.log.modloaderProfile = newId;
+                Program.insManager.currInstallation.modloaderProfile = newId;
             }
 
             return success;
@@ -448,6 +451,7 @@ namespace MCGet.Platforms
             if (file != null)
             {
                 result.name = doc.RootElement.GetProperty("data").EnumerateArray().First().GetProperty("name").GetString() ?? "";
+                result.slug = doc.RootElement.GetProperty("data").EnumerateArray().First().GetProperty("slug").GetString() ?? "";
                 type = doc.RootElement.GetProperty("data").EnumerateArray().First().GetProperty("classId").GetInt32();
 
                 string? url = file?.GetOrNull("downloadUrl")?.GetString();

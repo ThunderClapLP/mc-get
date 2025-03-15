@@ -25,15 +25,14 @@ namespace MCGet
     {
         public enum COMMANDS { NONE = 0, INSTALL, SEARCH, LIST, REMOVE };
 
-        public static string archPath = "";
         public static string dir = "";
-        public static string minecraftDir = "";
-        public static string installDir = "";
         public static string tempDir = "/temp/";
         public static string backupDir = "/backup/";
         public static string archiveDir = "/archives/";
+        public static bool modifyExisting = false;
         public static string api_user_agent = "mc-get/" + (Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.1") + " (ThunderClapLP/mc-get)";
         public static Backup backup = new Backup("");
+        public static InstallationManager insManager = new InstallationManager();
 
         //command line args
         public static bool cSilent = false;
@@ -78,6 +77,7 @@ Flags:
     -mr / --modrinth    :  download from modrinth
     -cf / --curseforge  :  download from curseforge
     -m <path>           :  specifies minecraft installation path
+    --path              :  specifies the target installation path
     -mc <version>       :  specifies the minecraft version
     --server            :  installs mod / modpack as server
     -v / --version      :  displays the current version
@@ -109,7 +109,14 @@ Examples:
                     case "-m":
                         if (i < args.Length - 1)
                         {
-                            minecraftDir = args[i + 1];
+                            insManager.currInstallation.minecraftDir = args[i + 1];
+                            i++;
+                        }
+                        break;
+                    case "--path":
+                        if (i < args.Length - 1)
+                        {
+                            insManager.currInstallation.installationDir = args[i + 1];
                             i++;
                         }
                         break;
@@ -130,6 +137,7 @@ Examples:
                         break;
                     case "--server":
                         cServer = true;
+                        insManager.currInstallation.isServer = true;
                         break;
                     case "-v":
                     case "--version":
@@ -186,7 +194,7 @@ Examples:
                     default:
                         if (args[i].ToLower().EndsWith(".zip") || args[i].ToLower().EndsWith(".mrpack"))
                         {
-                            archPath = Path.GetFullPath(args[i]);
+                            insManager.currInstallation.archivePath = Path.GetFullPath(args[i]);
                             invalidArgs = false;
                         }
                         break;
@@ -213,6 +221,7 @@ Examples:
             //dir = System.IO.Directory.GetCurrentDirectory();
 
             backup = new Backup(dir + backupDir);
+            insManager.LoadOrCreate(dir);
 
 
 
@@ -255,6 +264,7 @@ Examples:
                             cfResult?.Wait();
                             spinner.StopAnimation();
                             List<string>? urls = null;
+                            insManager.EnsureUniqueId(insManager.currInstallation);
 
                             //CTools.WriteResult(true);
                             if ((mrResult?.Result.success ?? false) && (cfResult?.Result.success ?? false))
@@ -265,11 +275,13 @@ Examples:
                                 {
                                     urls = mrResult.Result.urls;
                                     extractedName = mrResult.Result.name;
+                                    insManager.currInstallation.slug = mrResult.Result.slug;
                                 }
                                 else
                                 {
                                     urls = cfResult.Result.urls;
                                     extractedName = cfResult.Result.name;
+                                    insManager.currInstallation.slug = mrResult.Result.slug;
                                 }
                             }
                             else if (mrResult?.Result.success ?? false)
@@ -277,12 +289,14 @@ Examples:
                                 CTools.WriteResult(true, spinner);
                                 urls = mrResult.Result.urls;
                                 extractedName = mrResult.Result.name;
+                                insManager.currInstallation.slug = mrResult.Result.slug;
                             }
                             else if (cfResult?.Result.success ?? false)
                             {
                                 CTools.WriteResult(true, spinner);
                                 urls = cfResult.Result.urls;
                                 extractedName = cfResult.Result.name;
+                                insManager.currInstallation.slug = cfResult.Result.slug;
                             }
 
                             if (mrResult?.Result.error == GetProjectResult.ErrorCode.ConnectionFailed)
@@ -296,6 +310,46 @@ Examples:
                                 if (urls[0].Split("|")[0] == "modpack")
                                 {
                                     //modpack
+
+                                    //check for existing installations
+                                    List<Installation> existingInstallations = insManager.GetInstallationsBySlug(insManager.currInstallation.slug);
+                                    if (existingInstallations.Count > 0)
+                                    {
+                                        if (CTools.ConfirmDialog("Upgrade existing installation?", true))
+                                        {
+                                            modifyExisting = true;
+                                            if (existingInstallations.Count == 1)
+                                            {
+                                                insManager.currInstallation = existingInstallations[0];
+                                            }
+                                            else
+                                            {
+                                                //TODO: implement selection of installations with the same slug
+                                                throw new NotImplementedException();
+                                            }
+                                        }
+                                    }
+
+                                    if (insManager.currInstallation.installationDir == "")
+                                    {
+                                        if (CTools.ConfirmDialog("Install modpack into \"" + insManager.installations.settings.defaultInstallationPath + "\"?", true))
+                                            insManager.currInstallation.installationDir = insManager.installations.settings.defaultInstallationPath;
+                                        else
+                                        {
+                                            bool insDirValid = false;
+                                            while (!insDirValid)
+                                            {
+                                                CTools.Write("Enter target installation dir: ");
+                                                insManager.currInstallation.installationDir = Console.ReadLine() ?? "";
+                                                if (Directory.Exists(insManager.currInstallation.installationDir))
+                                                    insDirValid = true;
+                                                else
+                                                    CTools.WriteError("Directory does not exist");
+                                            }
+                                        }
+                                    }
+                                    insManager.currInstallation.installationDir = insManager.currInstallation.installationDir.Replace("\\", "/").TrimEnd('/') + "/" + insManager.currInstallation.slug + insManager.currInstallation.Id;
+
                                     urls[0] = urls[0].Split("|").Last(); //delete modloaders
                                     spinner.top = CTools.CursorTop;
                                     spinner.msg = "Downloading pack file";
@@ -306,12 +360,13 @@ Examples:
                                         return;
                                     }
 
-                                    archPath = dir + archiveDir + Path.GetFileName(HttpUtility.UrlDecode(urls[0]));
+                                    insManager.currInstallation.archivePath = dir + archiveDir + Path.GetFileName(HttpUtility.UrlDecode(urls[0]));
                                     CTools.WriteResult(true, spinner);
                                 }
                                 else if (urls[0].Split("|")[0] == "mod")
                                 {
                                     //single mod
+                                    //TODO: choose existing installation
                                     CTools.WriteError("Single mod:", 0);
                                     CTools.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(urls[0].Split("|").Last())));
                                     if (urls.Count > 1)
@@ -351,7 +406,8 @@ Examples:
                                     {
                                         try
                                         {
-                                            File.Copy(dir + tempDir + "mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), minecraftDir + "/mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), true);
+                                            File.Copy(dir + tempDir + "mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), insManager.currInstallation.installationDir + "/mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), true);
+                                            //TODO: add to insManager.currInstallation.customMods
                                         }
                                         catch
                                         {
@@ -426,11 +482,20 @@ Examples:
                     break;
                 case COMMANDS.REMOVE:
                     CTools.WriteLine("TODO: implement");
+                    //insManager.currInstallation = ...
                     Environment.Exit(0);
+                    break;
+                default:
+                    if (insManager.currInstallation.archivePath != "")
+                    {
+                        //install archive
+                        insManager.EnsureUniqueId(insManager.currInstallation);
+                    }
                     break;
             }
 
-            RestoreBackup();
+            //not needed anymore?
+            //RestoreBackup();
 
             CTools.Write("Cleaning up");
             if (backup.Clean())
@@ -438,15 +503,15 @@ Examples:
             else
                 CTools.WriteResult(false);
 
-            if (archPath != "")
+            if (insManager.currInstallation.archivePath != "")
                 CopyArchive();
-            //backup.log.archiveFile = archPath;
+            //backup.log.archiveFile = insManager.currInstallation.archivePath;
 
             //extract
             ExtractArchive();
 
             //load manifest
-            if (!cServer || archPath.EndsWith(".mrpack"))
+            if (!cServer || insManager.currInstallation.archivePath.EndsWith(".mrpack"))
                 LoadManifest();
             else
             {
@@ -463,7 +528,7 @@ Examples:
                     {
                         outputDir = Directory.GetDirectories(outputDir)[0];
                     }
-                    CopyDir(outputDir, minecraftDir, bar);
+                    CopyDir(outputDir, insManager.currInstallation.installationDir, bar);
                 }
                 catch (Exception)
                 {
@@ -478,14 +543,18 @@ Examples:
 
             //Get Platform
             Platform platform = new CurseForge();;
-            if (archPath.EndsWith(".mrpack"))
+            if (insManager.currInstallation.archivePath.EndsWith(".mrpack"))
             {
                 platform = new Modrinth();
                 platform.name = manifestDoc?.RootElement.GetOrNull("name").ToString() ?? "";
+                insManager.currInstallation.modpackName = platform.name;
             }
 
-            if (extractedName != "")
+            if (extractedName != "" && platform.name == "")
+            {
                 platform.name = extractedName;
+                insManager.currInstallation.modpackName = extractedName;
+            }
 
             if (!platform.InstallDependencies())
             {
@@ -511,6 +580,8 @@ Examples:
             //if (!cServer) //do not backup on server
             //do not save backup at all
             //backup.Save();
+            insManager.AddInstallation(insManager.currInstallation);
+            insManager.Save();
 
             CTools.Write("Cleaning up");
             try
@@ -560,34 +631,34 @@ Examples:
             {
                 bool confirmed = false;
                 //try backup minecraft path
-                if (minecraftDir == "")
+                if (insManager.currInstallation.minecraftDir == "")
                 {
-                    minecraftDir = backup.log.minecraftPath + "";
-                    if (Directory.Exists(minecraftDir))
+                    insManager.currInstallation.minecraftDir = insManager.installations.settings.minecraftPath;
+                    if (insManager.currInstallation.minecraftDir != "" && Directory.Exists(insManager.currInstallation.minecraftDir))
                         confirmed = true; //don't ask user to confirm if configured already
                 }
 
-                if (minecraftDir == "")
+                if (insManager.currInstallation.minecraftDir == "")
                 {
                     if (System.OperatingSystem.IsWindows())
                     {
                         if (Directory.Exists(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/.minecraft"))
                         {
-                            minecraftDir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/.minecraft";
+                            insManager.currInstallation.minecraftDir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/.minecraft";
                         }
                     }
                     else if (System.OperatingSystem.IsLinux())
                     {
-                        minecraftDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/.minecraft";
+                        insManager.currInstallation.minecraftDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/.minecraft";
                     }
                     else if (System.OperatingSystem.IsMacOS())
                     {
-                        minecraftDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/Library/Application Support/minecraft";
+                        insManager.currInstallation.minecraftDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/Library/Application Support/minecraft";
                     }
                 }
                 while (!confirmed)
                 {
-                    if (!Directory.Exists(minecraftDir) || !Directory.Exists(minecraftDir + "/versions"))
+                    if (!Directory.Exists(insManager.currInstallation.minecraftDir) || !Directory.Exists(insManager.currInstallation.minecraftDir + "/versions"))
                     {
                         CTools.WriteError("Minecraft directory not found!");
 
@@ -598,44 +669,46 @@ Examples:
                     }
                     else
                     {
-                        minecraftDir = Path.GetFullPath(minecraftDir);
-                        CTools.WriteLine("Minecraft Directory Found: " + minecraftDir);
+                        insManager.currInstallation.minecraftDir = Path.GetFullPath(insManager.currInstallation.minecraftDir);
+                        CTools.WriteLine("Minecraft Directory Found: " + insManager.currInstallation.minecraftDir);
                         confirmed = CTools.ConfirmDialog("Use this Directory?", true);
 
                     }
                     if (!confirmed)
                     {
                         CTools.Write("Enter Minecraft Path: ");
-                        minecraftDir = Console.ReadLine() + "";
-                        if (minecraftDir != null && minecraftDir != "")
-                            minecraftDir = Path.GetFullPath(minecraftDir);
+                        insManager.currInstallation.minecraftDir = Console.ReadLine() + "";
+                        if (insManager.currInstallation.minecraftDir != null && insManager.currInstallation.minecraftDir != "")
+                            insManager.currInstallation.minecraftDir = Path.GetFullPath(insManager.currInstallation.minecraftDir);
                     }
+                    else
+                        insManager.installations.settings.minecraftPath = insManager.currInstallation.minecraftDir ?? ""; //set path in settings 
                 }
 
-                if (backup.log.minecraftPath + "" != minecraftDir)
+                if (backup.log.minecraftPath + "" != insManager.currInstallation.minecraftDir)
                 {
                     backup.Clean();
                     //backup = new Backup(backup.path);
                 }
-                backup.SetMinecraftPath(minecraftDir + "");
+                backup.SetMinecraftPath(insManager.currInstallation.minecraftDir + "");
             }
             else
             {
-                if (minecraftDir == "")
+                if (insManager.currInstallation.installationDir == "")
                 {
                     CTools.Write("Enter the server path (leave empty for current directory): ");
                     if (!cSilent)
                     {
-                        try {minecraftDir = Console.ReadLine() + "";}
+                        try {insManager.currInstallation.installationDir = Console.ReadLine() + "";}
                         catch {CTools.WriteLine("Getting user input failed!"); }
-                        if (minecraftDir == null || minecraftDir == "")
-                            minecraftDir = ".";
+                        if (insManager.currInstallation.installationDir == null || insManager.currInstallation.installationDir == "")
+                            insManager.currInstallation.installationDir = ".";
                     }
                 }
-                minecraftDir = Path.GetFullPath(minecraftDir);
+                insManager.currInstallation.installationDir = Path.GetFullPath(insManager.currInstallation.installationDir);
                 try
                 {
-                    Directory.CreateDirectory(minecraftDir);
+                    Directory.CreateDirectory(insManager.currInstallation.installationDir);
                 }
                 catch {}
             }
@@ -649,32 +722,32 @@ Examples:
                 if (!Directory.Exists(dir + archiveDir))
                     System.IO.Directory.CreateDirectory(dir + archiveDir);
 
-                if (!archPath.Contains(dir + archiveDir))
+                if (!insManager.currInstallation.archivePath.Contains(dir + archiveDir))
                 {
-                    File.Copy(archPath, dir + archiveDir + Path.GetFileName(archPath), true);
+                    File.Copy(insManager.currInstallation.archivePath, dir + archiveDir + Path.GetFileName(insManager.currInstallation.archivePath), true);
 
-                    archPath = dir + archiveDir + Path.GetFileName(archPath);
+                    insManager.currInstallation.archivePath = dir + archiveDir + Path.GetFileName(insManager.currInstallation.archivePath);
                 }
-                backup.log.archiveFile = Path.GetFileName(archPath);
+                backup.log.archiveFile = Path.GetFileName(insManager.currInstallation.archivePath);
             }
             catch (Exception)
             {
-                backup.log.archiveFile = archPath; //use absolute path on failure
+                backup.log.archiveFile = insManager.currInstallation.archivePath; //use absolute path on failure
             }
         }
 
         static void ExtractArchive()
         {
-            if (!File.Exists(archPath))
+            if (!File.Exists(insManager.currInstallation.archivePath))
             {
-                CTools.WriteError("Could not find archive '" + archPath + "'");
+                CTools.WriteError("Could not find archive '" + insManager.currInstallation.archivePath + "'");
                 RevertChanges();
             }
 
-            Spinner spinner = new Spinner("Extracting: " + Path.GetFileName(archPath), CTools.CursorTop);
+            Spinner spinner = new Spinner("Extracting: " + Path.GetFileName(insManager.currInstallation.archivePath), CTools.CursorTop);
             try
             {
-                ZipFile.ExtractToDirectory(archPath, dir + tempDir + "archive/");
+                ZipFile.ExtractToDirectory(insManager.currInstallation.archivePath, dir + tempDir + "archive/");
                 CTools.WriteResult(true, spinner);
             }
             catch (Exception e)
@@ -822,7 +895,7 @@ Examples:
 
         static void BackupModsFolder()
         {
-            string modsDir = Path.GetFullPath(minecraftDir + "/mods");
+            string modsDir = Path.GetFullPath(insManager.currInstallation.installationDir + "/mods");
             if (Directory.Exists(modsDir) || File.Exists(modsDir))
             {
                 if (Directory.GetDirectories(modsDir).Length > 0 || Directory.GetFiles(modsDir).Length > 0)
@@ -886,7 +959,7 @@ Examples:
                 bar.fill = true;
                 try
                 {
-                    CopyDir(dir + tempDir + "archive/overrides", minecraftDir, bar);
+                    CopyDir(dir + tempDir + "archive/overrides", InstallationManager.LocalToGlobalPath(insManager.currInstallation.installationDir), bar);
                 }
                 catch (Exception)
                 {
@@ -952,7 +1025,8 @@ Examples:
                 CTools.Write("Restoring Backups");
 
                 //delete automatically added launcher profile
-                backup.DeleteLauncherProfile();
+                if (!modifyExisting)
+                    backup.DeleteLauncherProfile();
 
                 backup.updateProgress += (int progress) =>
                 {
@@ -982,7 +1056,26 @@ Examples:
         public static void RevertChanges()
         {
             CTools.WriteError("Failed to install");
-            RestoreBackup();
+            if (modifyExisting)
+                RestoreBackup();
+            else
+            {
+                Spinner spinner = new Spinner("Reverting changes", CTools.CursorTop);
+                spinner.top = CTools.CursorTop;
+                spinner.StartAnimation();
+                insManager.DeleteLauncherProfile(insManager.currInstallation);
+                try
+                {
+                    Directory.Delete(insManager.currInstallation.installationDir, true);
+                    spinner.StopAnimation();
+                    CTools.WriteResult(true, spinner);
+                }
+                catch (Exception)
+                {
+                    spinner.StopAnimation();
+                    CTools.WriteResult(false, spinner);
+                }
+            }
             CTools.Write("Cleaning up");
             if (backup.Clean())
                 CTools.WriteResult(true);
