@@ -325,11 +325,19 @@ Examples:
                                             else
                                             {
                                                 ProfileHandler ph = new ProfileHandler();
-                                                ph.LoadProfiles();
+                                                string profilePath = insManager.installations.settings.minecraftPath;
+                                                if (profilePath != "")
+                                                    ph.LoadProfiles(profilePath + "/launcher_profiles.json");
                                                 CTools.WriteLine("    " + CTools.LimitText("ID", int.MaxValue.ToString().Length, true) + " | ProfileName");
-                                                int insRes = CTools.ListDialog("Choose installation you want to upgrade",
-                                                    existingInstallations.Select((e) => CTools.LimitText(e.Id ?? "??", int.MaxValue.ToString().Length, true) + " | " + (ph.GetProfileName(e.modloaderProfile ?? "") ?? "??")));
-                                                if (insRes < 0)
+                                                int insRes = CTools.ListDialog("Choose installation to list custom mods of",
+                                                    existingInstallations.Select((e) => {
+                                                        if (profilePath != e.minecraftDir)
+                                                        {
+                                                            profilePath = e.minecraftDir;
+                                                            ph.LoadProfiles(profilePath + "/launcher_profiles.json");
+                                                        }
+                                                        return CTools.LimitText(e.Id ?? "??", int.MaxValue.ToString().Length, true) + " | " + (ph.GetProfileName(e.modloaderProfile ?? "") ?? "??");
+                                                    })); if (insRes < 0)
                                                 {
                                                     CTools.WriteError("User input is required!");
                                                     Environment.Exit(1);
