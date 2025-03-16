@@ -487,7 +487,80 @@ Examples:
                     }
                     break;
                 case COMMANDS.LIST:
-                    CTools.WriteLine("TODO: implement");
+                    if (commandParams[0] == "installs")
+                    {
+                        ProfileHandler ph = new ProfileHandler();
+                        string profilePath = insManager.installations.settings.minecraftPath;
+                        if (profilePath != "")
+                            ph.LoadProfiles(profilePath + "/launcher_profiles.json");
+                        foreach (Installation install in insManager.installations.installations)
+                        {
+                            if (profilePath != install.minecraftDir)
+                            {
+                                profilePath = install.minecraftDir;
+                                ph.LoadProfiles(profilePath + "/launcher_profiles.json");
+                            }
+                            CTools.WriteLine(install.modpackName + "\n  slug: " + (install.slug ?? "??") + "\n  Id: " + install.Id + "\n  ProfileName: " + (ph.GetProfileName(install.modloaderProfile ?? "") ?? "??") + "\n  path: " + install.installationDir);
+
+                        }
+                    }
+                    else
+                    {
+                        List<Installation> searchResult = commandParams.Count > 1 ? insManager.SearchInstallations(commandParams[1], true) : insManager.installations.installations;
+                        Installation? ins = null;
+                        if (searchResult.Count == 1)
+                        {
+                            ins = searchResult[0];
+                        }
+                        else if (searchResult.Count > 1)
+                        {
+                            ProfileHandler ph = new ProfileHandler();
+                            string profilePath = insManager.installations.settings.minecraftPath;
+                            if (profilePath != "")
+                                ph.LoadProfiles(profilePath + "/launcher_profiles.json");
+                            CTools.WriteLine("    " + CTools.LimitText("ID", int.MaxValue.ToString().Length, true) + " | ProfileName | slug");
+                            int insRes = CTools.ListDialog("Choose installation to list custom mods of",
+                                searchResult.Select((e) => {
+                                    if (profilePath != e.minecraftDir)
+                                    {
+                                        profilePath = e.minecraftDir;
+                                        ph.LoadProfiles(profilePath + "/launcher_profiles.json");
+                                    }
+                                    return CTools.LimitText(e.Id ?? "??", int.MaxValue.ToString().Length, true) + " | " + (ph.GetProfileName(e.modloaderProfile ?? "") ?? "??") + " | " + (e.slug ?? "??");
+                                    }));
+                            if (insRes < 0)
+                            {
+                                CTools.WriteError("User input is required!");
+                                Environment.Exit(1);
+                            }
+                            ins = searchResult[insRes];
+                        }
+                        else
+                        {
+                            CTools.WriteLine("No installations match your search query");
+                        }
+
+                        if (ins != null)
+                        {
+                            CTools.WriteLine("Custom mods for " + ins.modpackName + " (" + ins.Id + "):");
+                            if (ins.customMods.Count == 0)
+                                CTools.WriteLine("  None");
+                            else
+                            {
+                                foreach (CustomMod mod in ins.customMods)
+                                {
+                                    CTools.WriteLine("  " + mod.name + " | slug: " + (mod.slug ?? "??") + " Id: " + (mod.projectId ?? "??"));
+                                    if (mod.files != null)
+                                    {
+                                        foreach (String file in mod.files)
+                                        {
+                                            CTools.WriteLine("    " + file);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                     Environment.Exit(0);
                     break;
                 case COMMANDS.REMOVE:
