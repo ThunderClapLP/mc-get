@@ -62,8 +62,10 @@ namespace MCGet
         /// <param name="profilePath">Path to minecraft launcher json</param>
         /// <param name="id"></param>
         /// <returns>True if successful</returns>
-        public bool LoadProfiles(string profilePath)
+        public bool LoadProfiles(string profilePath = "")
         {
+            if (profilePath == "")
+                profilePath = Program.insManager.currInstallation.minecraftDir + "/launcher_profiles.json";
             try
             {
                 profileJson = JsonNode.Parse(File.ReadAllText(profilePath));
@@ -121,6 +123,17 @@ namespace MCGet
             }
 
             return ret;
+        }
+
+        /// <summary>
+        /// Gets the name of the profile given by id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>name of the profile</returns>
+        public string? GetProfileName(string id)
+        {
+            JsonNode? profile = profileJson?["profiles"]?[id];
+            return (string?)profile?["name"];
         }
 
         /// <summary>

@@ -324,8 +324,17 @@ Examples:
                                             }
                                             else
                                             {
-                                                //TODO: implement selection of installations with the same slug
-                                                throw new NotImplementedException();
+                                                ProfileHandler ph = new ProfileHandler();
+                                                ph.LoadProfiles();
+                                                CTools.WriteLine("    " + CTools.LimitText("ID", int.MaxValue.ToString().Length, true) + " | ProfileName");
+                                                int insRes = CTools.ListDialog("Choose installation you want to upgrade",
+                                                    existingInstallations.Select((e) => CTools.LimitText(e.Id ?? "??", int.MaxValue.ToString().Length, true) + " | " + (ph.GetProfileName(e.modloaderProfile ?? "") ?? "??")));
+                                                if (insRes < 0)
+                                                {
+                                                    CTools.WriteError("User input is required!");
+                                                    Environment.Exit(1);
+                                                }
+                                                insManager.currInstallation = existingInstallations[insRes];
                                             }
                                         }
                                     }
@@ -348,7 +357,8 @@ Examples:
                                             }
                                         }
                                     }
-                                    insManager.currInstallation.installationDir = insManager.currInstallation.installationDir.Replace("\\", "/").TrimEnd('/') + "/" + insManager.currInstallation.slug + insManager.currInstallation.Id;
+                                    if (!modifyExisting)
+                                        insManager.currInstallation.installationDir = insManager.currInstallation.installationDir.Replace("\\", "/").TrimEnd('/') + "/" + insManager.currInstallation.slug + insManager.currInstallation.Id;
 
                                     urls[0] = urls[0].Split("|").Last(); //delete modloaders
                                     spinner.top = CTools.CursorTop;
