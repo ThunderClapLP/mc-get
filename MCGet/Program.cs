@@ -87,15 +87,19 @@ Commands:
         installs a mod / modpack
 
     search <query>
-        searches for modrinth projects
+        searches for modrinth/curseforge projects
     
-    list
-         installs       :  list all installed modpacks
-         mods (search)  :  list all custom mods in installation
-                           that fits the search term (either name or id)
+    list installs
+        list all installed modpacks
+    list mods <search>
+        list all custom mods in installation
+        that fits the search term (either slug or id)
 
-    remove
-        removes mod/modpack
+    remove installation <search>
+        removes an installation that fits the search term (either slug or id)
+    remove mod <installation>:<mod>
+        removes a mod from an installation
+        both <installation> and <mod> are search terms (either slug or id)
     
 Examples:
     {ExecutableName} install sodium:0.6.6:fabric
@@ -183,12 +187,19 @@ Examples:
                         }
                         break;
                     case "remove":
-                        command = COMMANDS.REMOVE;
-                        commandParams.Clear();
-                        invalidArgs = false;
-                        for (int j = i + 1; j < args.Length; j++)
+                        if (i < args.Length - 1 && (args[i + 1] == "mod" || args[i + 1] == "installation"))
                         {
-                            commandParams.Add(args[j]);
+                            command = COMMANDS.REMOVE;
+                            commandParams.Clear();
+                            invalidArgs = false;
+                            for (int j = i + 1; j < args.Length; j++)
+                            {
+                                commandParams.Add(args[j]);
+                            }
+                        }
+                        else
+                        {
+                            invalidArgsSuggestion = "remove installation (<id> | <slug>)/mod (<install id> | <install slug>):(<mod id> <mod slug>)";
                         }
                         break;
                     default:
@@ -315,7 +326,7 @@ Examples:
                                     List<Installation> existingInstallations = insManager.GetInstallationsBySlug(insManager.currInstallation.slug);
                                     if (existingInstallations.Count > 0)
                                     {
-                                        if (CTools.ConfirmDialog("Upgrade existing installation?", true))
+                                        if (!insManager.currInstallation.isServer && CTools.ConfirmDialog("Upgrade existing installation?", true))
                                         {
                                             modifyExisting = true;
                                             if (existingInstallations.Count == 1)
@@ -346,6 +357,16 @@ Examples:
                                             }
                                         }
                                     }
+                                    if (insManager.currInstallation.isServer)
+                                    {
+                                        Installation? ins = insManager.installations.installations.Find((e) => e.installationDir == insManager.currInstallation.installationDir);
+                                        if (ins != null)
+                                        {
+                                            modifyExisting = true;
+                                            insManager.currInstallation = ins;
+                                            CTools.WriteError("Upgrading Server", 0);
+                                        }
+                                    }
 
                                     if (insManager.currInstallation.installationDir == "")
                                     {
@@ -365,7 +386,7 @@ Examples:
                                             }
                                         }
                                     }
-                                    if (!modifyExisting)
+                                    if (!modifyExisting && !insManager.currInstallation.isServer)
                                         insManager.currInstallation.installationDir = insManager.currInstallation.installationDir.Replace("\\", "/").TrimEnd('/') + "/" + insManager.currInstallation.slug + insManager.currInstallation.Id;
 
                                     urls[0] = urls[0].Split("|").Last(); //delete modloaders
@@ -495,74 +516,78 @@ Examples:
                     }
                     break;
                 case COMMANDS.LIST:
-                    if (commandParams[0] == "installs")
                     {
-                        ProfileHandler ph = new ProfileHandler();
-                        string profilePath = insManager.installations.settings.minecraftPath;
-                        if (profilePath != "")
-                            ph.LoadProfiles(profilePath + "/launcher_profiles.json");
-                        foreach (Installation install in insManager.installations.installations)
+                        if (commandParams[0] == "installs")
                         {
-                            if (profilePath != install.minecraftDir)
-                            {
-                                profilePath = install.minecraftDir;
-                                ph.LoadProfiles(profilePath + "/launcher_profiles.json");
-                            }
-                            CTools.WriteLine(install.modpackName + "\n  slug: " + (install.slug ?? "??") + "\n  Id: " + install.Id + "\n  ProfileName: " + (ph.GetProfileName(install.modloaderProfile ?? "") ?? "??") + "\n  path: " + install.installationDir);
-
-                        }
-                    }
-                    else
-                    {
-                        List<Installation> searchResult = commandParams.Count > 1 ? insManager.SearchInstallations(commandParams[1], true) : insManager.installations.installations;
-                        Installation? ins = null;
-                        if (searchResult.Count == 1)
-                        {
-                            ins = searchResult[0];
-                        }
-                        else if (searchResult.Count > 1)
-                        {
+                            //list installations
                             ProfileHandler ph = new ProfileHandler();
                             string profilePath = insManager.installations.settings.minecraftPath;
                             if (profilePath != "")
                                 ph.LoadProfiles(profilePath + "/launcher_profiles.json");
-                            CTools.WriteLine("    " + CTools.LimitText("ID", int.MaxValue.ToString().Length, true) + " | ProfileName | slug");
-                            int insRes = CTools.ListDialog("Choose installation to list custom mods of",
-                                searchResult.Select((e) => {
-                                    if (profilePath != e.minecraftDir)
-                                    {
-                                        profilePath = e.minecraftDir;
-                                        ph.LoadProfiles(profilePath + "/launcher_profiles.json");
-                                    }
-                                    return CTools.LimitText(e.Id ?? "??", int.MaxValue.ToString().Length, true) + " | " + (ph.GetProfileName(e.modloaderProfile ?? "") ?? "??") + " | " + (e.slug ?? "??");
-                                    }));
-                            if (insRes < 0)
+                            foreach (Installation install in insManager.installations.installations)
                             {
-                                CTools.WriteError("User input is required!");
-                                Environment.Exit(1);
+                                if (profilePath != install.minecraftDir)
+                                {
+                                    profilePath = install.minecraftDir;
+                                    ph.LoadProfiles(profilePath + "/launcher_profiles.json");
+                                }
+                                CTools.WriteLine(install.modpackName + "\n  slug: " + (install.slug ?? "??") + "\n  Id: " + install.Id + "\n  ProfileName: " + (ph.GetProfileName(install.modloaderProfile ?? "") ?? "??") + "\n  path: " + install.installationDir);
+
                             }
-                            ins = searchResult[insRes];
                         }
                         else
                         {
-                            CTools.WriteLine("No installations match your search query");
-                        }
-
-                        if (ins != null)
-                        {
-                            CTools.WriteLine("Custom mods for " + ins.modpackName + " (" + ins.Id + "):");
-                            if (ins.customMods.Count == 0)
-                                CTools.WriteLine("  None");
+                            //list mods
+                            List<Installation> searchResult = commandParams.Count > 1 ? insManager.SearchInstallations(commandParams[1], true) : insManager.installations.installations;
+                            Installation? ins = null;
+                            if (searchResult.Count == 1)
+                            {
+                                ins = searchResult[0];
+                            }
+                            else if (searchResult.Count > 1)
+                            {
+                                ProfileHandler ph = new ProfileHandler();
+                                string profilePath = insManager.installations.settings.minecraftPath;
+                                if (profilePath != "")
+                                    ph.LoadProfiles(profilePath + "/launcher_profiles.json");
+                                CTools.WriteLine("    " + CTools.LimitText("ID", int.MaxValue.ToString().Length, true) + " | ProfileName | slug");
+                                int insRes = CTools.ListDialog("Choose installation to list custom mods of",
+                                    searchResult.Select((e) => {
+                                        if (profilePath != e.minecraftDir)
+                                        {
+                                            profilePath = e.minecraftDir;
+                                            ph.LoadProfiles(profilePath + "/launcher_profiles.json");
+                                        }
+                                        return CTools.LimitText(e.Id ?? "??", int.MaxValue.ToString().Length, true) + " | " + (ph.GetProfileName(e.modloaderProfile ?? "") ?? "??") + " | " + (e.slug ?? "??");
+                                        }));
+                                if (insRes < 0)
+                                {
+                                    CTools.WriteError("User input is required!");
+                                    Environment.Exit(1);
+                                }
+                                ins = searchResult[insRes];
+                            }
                             else
                             {
-                                foreach (CustomMod mod in ins.customMods)
+                                CTools.WriteLine("No installation matches your search query");
+                            }
+
+                            if (ins != null)
+                            {
+                                CTools.WriteLine("Custom mods for " + ins.modpackName + " (" + ins.Id + "):");
+                                if (ins.customMods.Count == 0)
+                                    CTools.WriteLine("  None");
+                                else
                                 {
-                                    CTools.WriteLine("  " + mod.name + " | slug: " + (mod.slug ?? "??") + " Id: " + (mod.projectId ?? "??"));
-                                    if (mod.files != null)
+                                    foreach (CustomMod mod in ins.customMods)
                                     {
-                                        foreach (String file in mod.files)
+                                        CTools.WriteLine("  " + mod.name + " | slug: " + (mod.slug ?? "??") + " Id: " + (mod.projectId ?? "??"));
+                                        if (mod.files != null)
                                         {
-                                            CTools.WriteLine("    " + file);
+                                            foreach (String file in mod.files)
+                                            {
+                                                CTools.WriteLine("    " + file);
+                                            }
                                         }
                                     }
                                 }
@@ -572,8 +597,129 @@ Examples:
                     Environment.Exit(0);
                     break;
                 case COMMANDS.REMOVE:
-                    CTools.WriteLine("TODO: implement");
-                    //insManager.currInstallation = ...
+                    {
+                        List<Installation> installationSerchResult = commandParams.Count > 1 ? insManager.SearchInstallations(commandParams[1].Split(":")[0], true) : insManager.installations.installations;
+                        Installation? ins = null;
+                        if (installationSerchResult.Count == 1)
+                        {
+                            ins = installationSerchResult[0];
+                        }
+                        else if (installationSerchResult.Count > 1)
+                        {
+                            ProfileHandler ph = new ProfileHandler();
+                            string profilePath = insManager.installations.settings.minecraftPath;
+                            if (profilePath != "")
+                                ph.LoadProfiles(profilePath + "/launcher_profiles.json");
+                            CTools.WriteLine("    " + CTools.LimitText("ID", int.MaxValue.ToString().Length, true) + " | ProfileName | slug");
+                            int insRes = CTools.ListDialog("Choose installation",
+                                installationSerchResult.Select((e) => {
+                                    if (profilePath != e.minecraftDir)
+                                    {
+                                        profilePath = e.minecraftDir;
+                                        ph.LoadProfiles(profilePath + "/launcher_profiles.json");
+                                    }
+                                    return CTools.LimitText(e.Id ?? "??", int.MaxValue.ToString().Length, true) + " | " + (ph.GetProfileName(e.modloaderProfile ?? "") ?? "??") + " | " + (e.slug ?? "??");
+                                }));
+                            if (insRes < 0)
+                            {
+                                CTools.WriteError("User input is required!");
+                                Environment.Exit(1);
+                            }
+                            ins = installationSerchResult[insRes];
+                        }
+                        else
+                        {
+                            CTools.WriteLine("No installation matches your search query");
+                        }
+
+                        if (ins != null)
+                        {
+                            if (commandParams[0] == "installation")
+                            {
+                                //remove installation
+                                if (cSilent || CTools.ConfirmDialog("Are you sure to permanently remove installation " + ins.modpackName + " (" + ins.Id + ") from your disk", false))
+                                {
+                                    CTools.Write("Removing installation");
+                                    try
+                                    {
+                                        if (Directory.Exists(InstallationManager.LocalToGlobalPath(ins.installationDir)))
+                                        {
+                                            Directory.Delete(InstallationManager.LocalToGlobalPath(ins.installationDir), true);
+                                            insManager.RemoveInstallation(ins);
+                                            CTools.WriteResult(true);
+                                        }
+                                        else
+                                        {
+                                            insManager.RemoveInstallation(ins);
+                                            CTools.WriteResult(true);
+                                            CTools.WriteError("Installation path does not exist \"" + InstallationManager.LocalToGlobalPath(ins.installationDir) + "\"", 1);
+                                        }
+                                    }
+                                    catch (Exception)
+                                    {
+                                        CTools.WriteResult(false);
+                                        CTools.WriteError("Could not remove \"" + InstallationManager.LocalToGlobalPath(ins.installationDir) + "\"\nMake sure Minecraft is not running during uninstall");
+                                        Environment.Exit(1);
+                                    }
+                                }
+
+                            }
+                            else
+                            {
+                                //remove mod
+                                List<CustomMod> modSearchResult = commandParams.Count > 1 && commandParams[1].Split(":").Length >= 2 ? ins.customMods.FindAll((e) => (e.slug?.StartsWith(commandParams[1].Split(":")[1]) ?? false) || (e.projectId?.StartsWith(commandParams[1].Split(":")[1]) ?? false)) : ins.customMods;
+                                CustomMod? mod = null;
+                                if (modSearchResult.Count == 1)
+                                {
+                                    mod = modSearchResult[0];
+                                }
+                                else if (modSearchResult.Count > 1)
+                                {
+                                    int modRes = CTools.ListDialog("Choose custom mod", modSearchResult.Select((e) => e.name + " slug: " + (e.slug ?? "??") + " projectId: " + (e.projectId ?? "??")));
+                                    if (modRes < 0)
+                                    {
+                                        CTools.WriteError("User input is required!");
+                                        Environment.Exit(1);
+                                    }
+                                    mod = modSearchResult[modRes];
+                                }
+                                else
+                                {
+                                    CTools.WriteLine("No mod matches your search query");
+                                }
+
+                                if (mod != null)
+                                {
+                                    try
+                                    {
+                                        if (mod.files != null && mod.files.Length > 0)
+                                        {
+                                            foreach (string file in mod.files)
+                                            {
+                                                File.Delete(InstallationManager.LocalToGlobalPath(ins.installationDir + "/" + file));
+                                            }
+                                        }
+                                        else
+                                            CTools.WriteError("Mod does not contain any files", 1);
+                                        ins.customMods.Remove(mod);
+                                    }
+                                    catch (Exception)
+                                    {
+                                        CTools.WriteError("Deletion of at least one file failed! This will lead to inconsistent behaviour.\nPlease try again or delete them manually: ");
+                                        if (mod.files != null && mod.files.Length > 0)
+                                        {
+                                            foreach (string file in mod.files)
+                                            {
+                                                CTools.WriteLine(file);
+                                            }
+                                        }
+                                        Environment.Exit(1);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    insManager.Save();
                     Environment.Exit(0);
                     break;
                 default:
