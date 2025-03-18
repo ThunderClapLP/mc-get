@@ -164,22 +164,22 @@ Examples:
                             invalidArgs = false;
                             command = COMMANDS.SEARCH;
                             commandParams.Clear();
-                            for (int j = i + 1; j < args.Length; j++)
+                            for (i = i + 1; i < args.Length; i++)
                             {
-                                commandParams.Add(args[j]);
+                                commandParams.Add(args[i]);
                             }
                         }
                         break;
                     case "list":
-                        if (i < args.Length - 1 && (args[i+1] == "mods" || args[i+1] == "installs"))
+                        commandParams.Clear();
+                        for (i = i + 1; i < args.Length; i++)
+                        {
+                            commandParams.Add(args[i]);
+                        }
+                        if (commandParams.Count >= 1 && (commandParams[0] == "mods" || commandParams[0] == "installs"))
                         {
                             command = COMMANDS.LIST;
-                            commandParams.Clear();
                             invalidArgs = false;
-                            for (int j = i + 1; j < args.Length; j++)
-                            {
-                                commandParams.Add(args[j]);
-                            }
                         }
                         else
                         {
@@ -187,15 +187,15 @@ Examples:
                         }
                         break;
                     case "remove":
-                        if (i < args.Length - 1 && (args[i + 1] == "mod" || args[i + 1] == "installation"))
+                        commandParams.Clear();
+                        for (i = i + 1; i < args.Length; i++)
+                        {
+                            commandParams.Add(args[i]);
+                        }
+                        if (commandParams.Count >= 1 && (commandParams[0] == "mod" || commandParams[0] == "installation"))
                         {
                             command = COMMANDS.REMOVE;
-                            commandParams.Clear();
                             invalidArgs = false;
-                            for (int j = i + 1; j < args.Length; j++)
-                            {
-                                commandParams.Add(args[j]);
-                            }
                         }
                         else
                         {
@@ -370,7 +370,7 @@ Examples:
 
                                     if (insManager.currInstallation.installationDir == "")
                                     {
-                                        if (CTools.ConfirmDialog("Install modpack into \"" + insManager.installations.settings.defaultInstallationPath + "\"?", true))
+                                        if (CTools.ConfirmDialog("Install modpack into \"" + InstallationManager.LocalToGlobalPath(insManager.installations.settings.defaultInstallationPath).Replace("\\", "/") + "\"?", true))
                                             insManager.currInstallation.installationDir = insManager.installations.settings.defaultInstallationPath;
                                         else
                                         {
@@ -384,6 +384,10 @@ Examples:
                                                 else
                                                     CTools.WriteError("Directory does not exist");
                                             }
+
+                                            //set default?
+                                            if (CTools.ConfirmDialog("Use selected dir for all future installations?", false))
+                                                insManager.installations.settings.defaultInstallationPath = insManager.currInstallation.installationDir;
                                         }
                                     }
                                     if (!modifyExisting && !insManager.currInstallation.isServer)
