@@ -39,7 +39,7 @@ namespace MCGet.Platforms
                         failedMods.Remove(file);
 
                     //make sure to only download mods for specified environment (server / client)
-                    JsonElement? currElem = file.GetOrNull("env")?.GetOrNull(Program.cServer ? "server": "client");
+                    JsonElement? currElem = file.GetOrNull("env")?.GetOrNull(Program.insManager.currInstallation.isServer ? "server": "client");
                     if (currElem == null || currElem?.ToString() != "unsupported")
                     {
                         if (!files.Any(x => x.GetOrNull("path")?.GetString() == file.GetOrNull("path")?.GetString())) //check if file with same path already exists in list
@@ -183,7 +183,7 @@ namespace MCGet.Platforms
             
             ph.CreateSnapshot(Program.insManager.currInstallation.minecraftDir + "/launcher_profiles.json", ProfileHandler.SnapshotNumber.SECOND);
 
-            if (Program.cServer)
+            if (Program.insManager.currInstallation.isServer)
                 return true;
 
             ph.LoadProfiles(Program.insManager.currInstallation.minecraftDir + "/launcher_profiles.json");

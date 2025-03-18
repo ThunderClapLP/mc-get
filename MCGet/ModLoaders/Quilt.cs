@@ -30,7 +30,7 @@ namespace MCGet.ModLoaders
 
             Process quilt = new Process();
             quilt.StartInfo.FileName = javaPath + "java";
-            if (!Program.cServer)
+            if (!Program.insManager.currInstallation.isServer)
                 quilt.StartInfo.Arguments = "-jar \"" + Program.dir + Program.tempDir + Path.GetFileName(url) + "\" install client " + minecraftVersion + " " + loaderVersion + " --install-dir=\"" + Program.insManager.currInstallation.minecraftDir + "\"";
             else
                 quilt.StartInfo.Arguments = "-jar \"" + Program.dir + Program.tempDir + Path.GetFileName(url) + "\" install server " + minecraftVersion + " " + loaderVersion + " --install-dir=\"" + InstallationManager.LocalToGlobalPath(Program.insManager.currInstallation.installationDir) + "\"";

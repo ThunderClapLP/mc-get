@@ -29,7 +29,7 @@ namespace MCGet.ModLoaders
             Spinner spinner = new Spinner(CTools.CursorTop);
 
             //Alternative server install
-            // if (Program.cServer)
+            // if (Program.insManager.currInstallation.isServer)
             // {
             //     string serverFullUrl = url.Replace("{MC_VERSION}", minecraftVersion).Replace("{LOADER_VERSION}", loaderVersion);
             //     string fileName = "fabric-server-mc.{MC_VERSION}-loader.{LOADER_VERSION}-launcher.1.0.1.jar"
@@ -50,7 +50,7 @@ namespace MCGet.ModLoaders
             //perform the installation
             Process fabric = new Process();
             fabric.StartInfo.FileName = javaPath + "java";
-            if (!Program.cServer)
+            if (!Program.insManager.currInstallation.isServer)
                 fabric.StartInfo.Arguments = "-jar \"" + Program.dir + Program.tempDir + Path.GetFileName(url) + "\" client -mcversion " + minecraftVersion + " -loader" + loaderVersion + " -dir \"" + Program.insManager.currInstallation.minecraftDir + "\"";
             else
                 fabric.StartInfo.Arguments = "-jar \"" + Program.dir + Program.tempDir + Path.GetFileName(url) + "\" server -mcversion " + minecraftVersion + " -loader" + loaderVersion + " -dir \"" + InstallationManager.LocalToGlobalPath(Program.insManager.currInstallation.installationDir) + "\" -downloadMinecraft";

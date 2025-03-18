@@ -314,7 +314,7 @@ namespace MCGet.Platforms
 
             ph.CreateSnapshot(Program.insManager.currInstallation.minecraftDir + "/launcher_profiles.json", ProfileHandler.SnapshotNumber.SECOND);
 
-            if (Program.cServer)
+            if (Program.insManager.currInstallation.isServer)
                 return true;
 
             ph.LoadProfiles(Program.insManager.currInstallation.minecraftDir + "/launcher_profiles.json");
@@ -456,7 +456,7 @@ namespace MCGet.Platforms
 
                 string? url = file?.GetOrNull("downloadUrl")?.GetString();
 
-                if (Program.cServer && type  == 4471)
+                if (Program.insManager.currInstallation.isServer && type  == 4471)
                 {
                     getTask = client.GetStringAsync(apiurl + "/mods/" + doc.RootElement.GetProperty("data").EnumerateArray().First().GetProperty("id").GetInt32() + "/files/" + file?.GetProperty("serverPackFileId").GetInt32());
 

@@ -42,7 +42,7 @@ namespace MCGet.ModLoaders
                 //perform installation
                 Process forge = new Process();
                 forge.StartInfo.FileName = javaPath + "java";
-                if (!Program.cServer)
+                if (!Program.insManager.currInstallation.isServer)
                     forge.StartInfo.Arguments = "-jar \"" + Program.dir + Program.tempDir + Path.GetFileName(forgeFullUrl) + "\"";
                 else
                     forge.StartInfo.Arguments = "-jar \"" + Program.dir + Program.tempDir + Path.GetFileName(forgeFullUrl) + "\" --InstallServer \"" + InstallationManager.LocalToGlobalPath(Program.insManager.currInstallation.installationDir) + "\"";

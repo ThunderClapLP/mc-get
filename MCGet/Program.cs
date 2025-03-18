@@ -748,7 +748,7 @@ Examples:
             ExtractArchive();
 
             //load manifest
-            if (!cServer || insManager.currInstallation.archivePath.EndsWith(".mrpack"))
+            if (!insManager.currInstallation.isServer || insManager.currInstallation.archivePath.EndsWith(".mrpack"))
                 LoadManifest();
             else
             {
@@ -864,7 +864,7 @@ Examples:
                 RevertChanges();
             }
 
-            if (!cServer)
+            if (!insManager.currInstallation.isServer)
             {
                 bool confirmed = false;
                 //try backup minecraft path
