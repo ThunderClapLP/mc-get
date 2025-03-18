@@ -376,9 +376,21 @@ namespace MCGet.Platforms
             if (cfurl == "" || apiurl == "")
                 return result;
 
-            //get mod
-            Task<string> getTask = client.GetStringAsync(apiurl + "/mods/search?gameId=432&slug=" + HttpUtility.UrlEncode(name));
+            int id = -1;
+            if (name.All((e) => e >= '0' && e <= '9'))
+                id = int.Parse(name);
 
+            Task<string> getTask;
+            if (id == -1)
+            {
+                //get mod from slug
+                getTask = client.GetStringAsync(apiurl + "/mods/search?gameId=432&slug=" + HttpUtility.UrlEncode(name));
+            }
+            else
+            {
+                //get mod from id
+                getTask = client.GetStringAsync(apiurl + "/mods/" + id);
+            }
             //wait for completion
             try
             {
@@ -392,16 +404,29 @@ namespace MCGet.Platforms
                     result.error = GetProjectResult.ErrorCode.ConnectionFailed;
             }
             catch (TaskCanceledException e)
-                { result.error = GetProjectResult.ErrorCode.ConnectionFailed; }
+            { result.error = GetProjectResult.ErrorCode.ConnectionFailed; }
 
             if (!getTask.IsCompletedSuccessfully || getTask.IsFaulted)
                 return result;
 
             JsonDocument doc = JsonDocument.Parse(getTask.Result);
+            JsonElement? data = null;
             JsonElement? file = null;
             int type = -1;
+            if (id == -1)
+            {
+                if (doc.RootElement.GetProperty("data").EnumerateArray().Count() > 0)
+                {
+                    id = doc.RootElement.GetProperty("data").EnumerateArray().First().GetProperty("id").GetInt32();
+                    data = doc.RootElement.GetProperty("data").EnumerateArray().First();
+                }
+            }
+            else
+            {
+                data = doc.RootElement.GetProperty("data");
+            }
 
-            if (doc.RootElement.GetProperty("data").EnumerateArray().Count() > 0)
+            if (id != -1)
             {
                 string fileParams = "";
                 if (minecraftVersion != "")
@@ -418,7 +443,7 @@ namespace MCGet.Platforms
                 }
                 if (fileParams != "")
                     fileParams = "?" + fileParams;
-                getTask = client.GetStringAsync(apiurl + "/mods/" + doc.RootElement.GetProperty("data").EnumerateArray().First().GetProperty("id").GetInt32() + "/files" + fileParams);
+                getTask = client.GetStringAsync(apiurl + "/mods/" + id + "/files" + fileParams);
 
                 try
                 {
@@ -448,17 +473,17 @@ namespace MCGet.Platforms
                 }
             }
 
-            if (file != null)
+            if (file != null && data != null)
             {
-                result.name = doc.RootElement.GetProperty("data").EnumerateArray().First().GetProperty("name").GetString() ?? "";
-                result.slug = doc.RootElement.GetProperty("data").EnumerateArray().First().GetProperty("slug").GetString() ?? "";
-                type = doc.RootElement.GetProperty("data").EnumerateArray().First().GetProperty("classId").GetInt32();
+                result.name = data?.GetProperty("name").GetString() ?? "";
+                result.slug = data?.GetProperty("slug").GetString() ?? "";
+                type = data?.GetProperty("classId").GetInt32() ?? -1;
 
                 string? url = file?.GetOrNull("downloadUrl")?.GetString();
 
                 if (Program.insManager.currInstallation.isServer && type  == 4471)
                 {
-                    getTask = client.GetStringAsync(apiurl + "/mods/" + doc.RootElement.GetProperty("data").EnumerateArray().First().GetProperty("id").GetInt32() + "/files/" + file?.GetProperty("serverPackFileId").GetInt32());
+                    getTask = client.GetStringAsync(apiurl + "/mods/" + data?.GetProperty("id").GetInt32() + "/files/" + file?.GetProperty("serverPackFileId").GetInt32());
 
                     try
                     {
