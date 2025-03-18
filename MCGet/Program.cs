@@ -661,6 +661,13 @@ Examples:
                                         CTools.WriteError("Could not remove \"" + InstallationManager.LocalToGlobalPath(ins.installationDir) + "\"\nMake sure Minecraft is not running during uninstall");
                                         Environment.Exit(1);
                                     }
+
+                                    if (ins.modloaderProfile != null)
+                                    {
+                                        if (!insManager.DeleteLauncherProfile(ins))
+                                            CTools.WriteError("Removing launcher profile failed.", 1);
+                                    }
+
                                 }
 
                             }
