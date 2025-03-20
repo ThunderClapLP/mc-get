@@ -26,6 +26,7 @@ namespace MCGet
         public string? slug { get; set; }
         public string? modpackVersion { get; set; }
         public string? mcVersion { get; set; }
+        public string? modloader { get; set; }
         public string archivePath { get; set; } = "";
         public string minecraftDir { get; set; } = "";
         public string installationDir { get; set; } = "";

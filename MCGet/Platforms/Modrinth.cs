@@ -175,11 +175,13 @@ namespace MCGet.Platforms
                 return false;
             }
 
+            Program.insManager.currInstallation.modloader = modloaderVersion;
+            Program.insManager.currInstallation.mcVersion = Program.manifestDoc?.RootElement.GetProperty("dependencies").GetProperty("minecraft").GetString();
 
             ProfileHandler ph = new ProfileHandler();
             ph.CreateSnapshot(Program.insManager.currInstallation.minecraftDir + "/launcher_profiles.json", ProfileHandler.SnapshotNumber.FIRST);
 
-            bool success = modLoader?.Install(Program.manifestDoc?.RootElement.GetProperty("dependencies").GetProperty("minecraft").GetString() ?? "", modloaderVersion) ?? false;
+            bool success = modLoader?.Install(Program.insManager.currInstallation.mcVersion ?? "", modloaderVersion) ?? false;
             
             ph.CreateSnapshot(Program.insManager.currInstallation.minecraftDir + "/launcher_profiles.json", ProfileHandler.SnapshotNumber.SECOND);
 
