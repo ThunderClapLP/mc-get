@@ -47,7 +47,7 @@ namespace MCGet
         public string name { get; set; } = "";
         public string? slug { get; set; }
         public string? projectId { get; set; }
-        public string[]? files { get; set; }
+        public List<string> files { get; set; } = new List<string>();
     }
 
     public class InstallationManager

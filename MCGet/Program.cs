@@ -340,7 +340,7 @@ Examples:
                                                 if (profilePath != "")
                                                     ph.LoadProfiles(profilePath + "/launcher_profiles.json");
                                                 CTools.WriteLine("    " + CTools.LimitText("ID", int.MaxValue.ToString().Length, true) + " | ProfileName");
-                                                int insRes = CTools.ListDialog("Choose installation to list custom mods of",
+                                                int insRes = CTools.ListDialog("Choose installation",
                                                     existingInstallations.Select((e) => {
                                                         if (profilePath != e.minecraftDir)
                                                         {
@@ -409,9 +409,48 @@ Examples:
                                 else if (urls[0].Split("|")[0] == "mod")
                                 {
                                     //single mod
-                                    //TODO: choose existing installation
                                     CTools.WriteError("Single mod:", 0);
                                     CTools.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(urls[0].Split("|").Last())));
+                                    //check for existing installations
+                                    List<Installation> existingInstallations = insManager.installations.installations;
+                                    Installation? ins = null;
+                                    if (existingInstallations.Count > 0)
+                                    {
+                                        modifyExisting = true;
+                                        if (existingInstallations.Count == 1)
+                                        {
+                                            insManager.currInstallation = existingInstallations[0];
+                                        }
+                                        else
+                                        {
+                                            ProfileHandler ph = new ProfileHandler();
+                                            string profilePath = insManager.installations.settings.minecraftPath;
+                                            if (profilePath != "")
+                                                ph.LoadProfiles(profilePath + "/launcher_profiles.json");
+                                            CTools.WriteLine("    " + CTools.LimitText("ID", int.MaxValue.ToString().Length, true) + " | ProfileName | slug");
+                                            int insRes = CTools.ListDialog("Choose installation",
+                                                existingInstallations.Select((e) => {
+                                                    if (profilePath != e.minecraftDir)
+                                                    {
+                                                        profilePath = e.minecraftDir;
+                                                        ph.LoadProfiles(profilePath + "/launcher_profiles.json");
+                                                    }
+                                                    return CTools.LimitText(e.Id ?? "??", int.MaxValue.ToString().Length, true) + " | " + (ph.GetProfileName(e.modloaderProfile ?? "") ?? "??") + " | " + (e.slug ?? "??");
+                                                })); if (insRes < 0)
+                                            {
+                                                CTools.WriteError("User input is required!");
+                                                Environment.Exit(1);
+                                            }
+                                            ins = existingInstallations[insRes];
+                                        }
+                                    }
+
+                                    if (ins == null)
+                                    {
+                                        CTools.WriteLine("No existing project to install mod into");
+                                        Environment.Exit(1);
+                                    }
+
                                     if (urls.Count > 1)
                                     {
                                         CTools.WriteLine("With dependencies:");
@@ -442,6 +481,9 @@ Examples:
 
                                     CTools.WriteResult(true, spinner);
 
+                                    CustomMod custMod = new CustomMod();
+                                    custMod.slug = insManager.currInstallation.slug;
+                                    custMod.name = extractedName;
                                     //copy mod
 
                                     CTools.Write("Copy mod");
@@ -449,8 +491,9 @@ Examples:
                                     {
                                         try
                                         {
-                                            File.Copy(dir + tempDir + "mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), insManager.currInstallation.installationDir + "/mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), true);
+                                            File.Copy(dir + tempDir + "mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), ins.installationDir + "/mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), true);
                                             //TODO: add to insManager.currInstallation.customMods
+                                            custMod.files.Add("/mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])));
                                         }
                                         catch
                                         {
@@ -459,6 +502,8 @@ Examples:
                                             return;
                                         }
                                     }
+                                    ins.customMods.Add(custMod);
+                                    insManager.Save();
 
                                     CTools.WriteResult(true);
                                     Environment.Exit(0);
@@ -703,7 +748,7 @@ Examples:
                                 {
                                     try
                                     {
-                                        if (mod.files != null && mod.files.Length > 0)
+                                        if (mod.files != null && mod.files.Count > 0)
                                         {
                                             foreach (string file in mod.files)
                                             {
@@ -717,7 +762,7 @@ Examples:
                                     catch (Exception)
                                     {
                                         CTools.WriteError("Deletion of at least one file failed! This will lead to inconsistent behaviour.\nPlease try again or delete them manually: ");
-                                        if (mod.files != null && mod.files.Length > 0)
+                                        if (mod.files != null && mod.files.Count > 0)
                                         {
                                             foreach (string file in mod.files)
                                             {
