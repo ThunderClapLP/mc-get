@@ -492,7 +492,6 @@ Examples:
                                         try
                                         {
                                             File.Copy(dir + tempDir + "mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), ins.installationDir + "/mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), true);
-                                            //TODO: add to insManager.currInstallation.customMods
                                             custMod.files.Add("/mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])));
                                         }
                                         catch
@@ -580,7 +579,7 @@ Examples:
                                     profilePath = install.minecraftDir;
                                     ph.LoadProfiles(profilePath + "/launcher_profiles.json");
                                 }
-                                CTools.WriteLine(install.modpackName + "\n  slug: " + (install.slug ?? "??") + "\n  Id: " + install.Id + "\n  ProfileName: " + (ph.GetProfileName(install.modloaderProfile ?? "") ?? "??") + "\n  path: " + install.installationDir);
+                                CTools.WriteLine(install.modpackName + "\n  slug: " + (install.slug ?? "??") + "\n  Id: " + install.Id + "\n  ProfileName: " + (ph.GetProfileName(install.modloaderProfile ?? "") ?? "??") + "\n  mc version: " + (install.mcVersion ?? "??") + "\n  path: " + install.installationDir);
 
                             }
                         }
