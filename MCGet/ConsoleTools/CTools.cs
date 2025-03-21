@@ -211,6 +211,7 @@ namespace ConsoleTools
                     {
                         exit = true;
                         defaultRes = key.KeyChar;
+                        Console.Write(defaultRes.ToString());
                     }
                     else Console.Write("Illegal Input");
                     Console.WriteLine();
