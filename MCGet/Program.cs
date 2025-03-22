@@ -263,62 +263,17 @@ Examples:
                         }
                         if (installName != "")
                         {
-                            Task<GetProjectResult>? mrResult = null;
-                            Task<GetProjectResult>? cfResult = null;
-                            if (cModrinth || (!cModrinth && !cCurseForge))
-                                mrResult = Modrinth.GetProject(installName, installGameVersion, installModVersion, installLoader);
-                            if (cCurseForge || (!cModrinth && !cCurseForge))
-                                cfResult = CurseForge.GetProject(installName, installGameVersion, installModVersion, installLoader);
-                            spinner.msg = "Getting project info";
-                            spinner.StartAnimation();
-                            mrResult?.Wait();
-                            cfResult?.Wait();
-                            spinner.StopAnimation();
-                            List<string>? urls = null;
+
+                            GetProjectResult? result = GetProject(installName, installGameVersion, installModVersion, installLoader,
+                                (!cCurseForge && !cModrinth) ? null : (cModrinth ? typeof(Modrinth) : typeof(CurseForge)), spinner);
                             insManager.EnsureUniqueId(insManager.currInstallation);
 
-                            //CTools.WriteResult(true);
-                            if ((mrResult?.Result.success ?? false) && (cfResult?.Result.success ?? false))
-                            {
-                                CTools.WriteResult(true, spinner);
-                                char choice = CTools.ChoiceDialog("Install from (M)odrinth or (C)urseForge?", new char[] { 'm', 'c' }, 'm');
-                                if (choice == 'm')
-                                {
-                                    urls = mrResult.Result.urls;
-                                    extractedName = mrResult.Result.name;
-                                    insManager.currInstallation.slug = mrResult.Result.slug;
-                                }
-                                else
-                                {
-                                    urls = cfResult.Result.urls;
-                                    extractedName = cfResult.Result.name;
-                                    insManager.currInstallation.slug = mrResult.Result.slug;
-                                }
-                            }
-                            else if (mrResult?.Result.success ?? false)
-                            {
-                                CTools.WriteResult(true, spinner);
-                                urls = mrResult.Result.urls;
-                                extractedName = mrResult.Result.name;
-                                insManager.currInstallation.slug = mrResult.Result.slug;
-                            }
-                            else if (cfResult?.Result.success ?? false)
-                            {
-                                CTools.WriteResult(true, spinner);
-                                urls = cfResult.Result.urls;
-                                extractedName = cfResult.Result.name;
-                                insManager.currInstallation.slug = cfResult.Result.slug;
-                            }
-
-                            if (mrResult?.Result.error == GetProjectResult.ErrorCode.ConnectionFailed)
-                                CTools.WriteError("Connection to Modrinth failed", 1);
-                            if (cfResult?.Result.error == GetProjectResult.ErrorCode.ConnectionFailed)
-                                CTools.WriteError("Connection to CurseForge failed", 1);
-
                             //download archive
-                            if (urls != null && urls[0] != "")
+                            if (result != null && result.urls != null && result.urls.Count > 0 && result.urls[0] != "")
                             {
-                                if (urls[0].Split("|")[0] == "modpack")
+                                extractedName = result.name;
+                                insManager.currInstallation.slug = result.slug;
+                                if (result.projectType == ProjectType.Modpack)
                                 {
                                     //modpack
 
@@ -393,24 +348,23 @@ Examples:
                                     if (!modifyExisting && !insManager.currInstallation.isServer)
                                         insManager.currInstallation.installationDir = insManager.currInstallation.installationDir.Replace("\\", "/").TrimEnd('/') + "/" + insManager.currInstallation.slug + insManager.currInstallation.Id;
 
-                                    urls[0] = urls[0].Split("|").Last(); //delete modloaders
                                     spinner.top = CTools.CursorTop;
                                     spinner.msg = "Downloading pack file";
-                                    if (!Networking.DownloadFile(urls[0], dir + archiveDir + Path.GetFileName(HttpUtility.UrlDecode(urls[0])), spinner))
+                                    if (!Networking.DownloadFile(result.urls[0], dir + archiveDir + Path.GetFileName(HttpUtility.UrlDecode(result.urls[0])), spinner))
                                     {
                                         CTools.WriteResult(false, spinner);
                                         Environment.Exit(0);
                                         return;
                                     }
 
-                                    insManager.currInstallation.archivePath = dir + archiveDir + Path.GetFileName(HttpUtility.UrlDecode(urls[0]));
+                                    insManager.currInstallation.archivePath = dir + archiveDir + Path.GetFileName(HttpUtility.UrlDecode(result.urls[0]));
                                     CTools.WriteResult(true, spinner);
                                 }
-                                else if (urls[0].Split("|")[0] == "mod")
+                                else if (result.projectType == ProjectType.Mod)
                                 {
                                     //single mod
                                     CTools.WriteError("Single mod:", 0);
-                                    CTools.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(urls[0].Split("|").Last())));
+                                    CTools.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(result.urls[0])));
                                     //check for existing installations
                                     List<Installation> existingInstallations = insManager.installations.installations;
                                     Installation? ins = null;
@@ -451,16 +405,15 @@ Examples:
                                         Environment.Exit(1);
                                     }
 
-                                    if (urls.Count > 1)
+                                    if (result.urls.Count > 1)
                                     {
                                         CTools.WriteLine("With dependencies:");
-                                        for (int i = 1; i < urls.Count; i++)
+                                        for (int i = 1; i < result.urls.Count; i++)
                                         {
-                                            CTools.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(urls[i].Split("|").Last())));
+                                            CTools.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(result.urls[i])));
                                         }
                                     }
-                                    CTools.WriteError("Compatible modloaders: " + urls[0].Split("|")[1], 0);
-                                    urls[0] = urls[0].Split("|").Last();
+                                    CTools.WriteError("Compatible modloaders: " + result.loader, 0);
                                     if (!CTools.ConfirmDialog("Install single mod", true))
                                     {
                                         //user canceled
@@ -469,9 +422,9 @@ Examples:
                                     }
                                     spinner.top = CTools.CursorTop;
                                     spinner.msg = "Downloading single mod";
-                                    for (int i = 0; i < urls.Count; i++)
+                                    for (int i = 0; i < result.urls.Count; i++)
                                     {
-                                        if (!Networking.DownloadFile(urls[i], dir + tempDir + "mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), spinner))
+                                        if (!Networking.DownloadFile(result.urls[i], dir + tempDir + "mods/" + Path.GetFileName(HttpUtility.UrlDecode(result.urls[i])), spinner))
                                         {
                                             CTools.WriteResult(false, spinner);
                                             Environment.Exit(0);
@@ -487,12 +440,12 @@ Examples:
                                     //copy mod
 
                                     CTools.Write("Copy mod");
-                                    for (int i = 0; i < urls.Count; i++)
+                                    for (int i = 0; i < result.urls.Count; i++)
                                     {
                                         try
                                         {
-                                            File.Copy(dir + tempDir + "mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), ins.installationDir + "/mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])), true);
-                                            custMod.files.Add("/mods/" + Path.GetFileName(HttpUtility.UrlDecode(urls[i])));
+                                            File.Copy(dir + tempDir + "mods/" + Path.GetFileName(HttpUtility.UrlDecode(result.urls[i])), ins.installationDir + "/mods/" + Path.GetFileName(HttpUtility.UrlDecode(result.urls[i])), true);
+                                            custMod.files.Add("/mods/" + Path.GetFileName(HttpUtility.UrlDecode(result.urls[i])));
                                         }
                                         catch
                                         {
@@ -512,7 +465,7 @@ Examples:
                                 else
                                 {
                                     //unknown
-                                    CTools.WriteError("Unknown project type: " + urls[0].Split("|")[0]);
+                                    CTools.WriteError("Unknown project type");
                                     Environment.Exit(1);
                                     return;
                                 }
@@ -520,7 +473,7 @@ Examples:
                             else
                             {
                                 CTools.WriteResult(false, spinner);
-                                if ((mrResult?.Result.error == GetProjectResult.ErrorCode.NotFound) || (cfResult?.Result.error == GetProjectResult.ErrorCode.NotFound))
+                                if ((result?.error == GetProjectResult.ErrorCode.NotFound))
                                     CTools.WriteError("No project with slug or id '" + installName + "' was found" + (installGameVersion != "" ? (" for version " + installGameVersion) : ""));
                                 Environment.Exit(1);
                                 return;
@@ -901,6 +854,62 @@ Examples:
             }
 
 
+        }
+
+        static GetProjectResult? GetProject(string installName, string installGameVersion, string installModVersion, string installLoader, Type? platformType, Spinner spinner)
+        {
+            GetProjectResult? result = null;
+            Task<GetProjectResult>? mrResult = null;
+            Task<GetProjectResult>? cfResult = null;
+            if (platformType == null || platformType.Equals(typeof(Modrinth)))
+                mrResult = Modrinth.GetProject(installName, installGameVersion, installModVersion, installLoader);
+            if (platformType == null || platformType.Equals(typeof(CurseForge)))
+                cfResult = CurseForge.GetProject(installName, installGameVersion, installModVersion, installLoader);
+            spinner.msg = "Getting project info";
+            spinner.StartAnimation();
+            mrResult?.Wait();
+            cfResult?.Wait();
+            spinner.StopAnimation();
+
+            //CTools.WriteResult(true);
+            if ((mrResult?.Result.success ?? false) && (cfResult?.Result.success ?? false))
+            {
+                CTools.WriteResult(true, spinner);
+                char choice = CTools.ChoiceDialog("Install from (M)odrinth or (C)urseForge?", new char[] { 'm', 'c' }, 'm');
+                if (choice == 'm')
+                {
+                    result = mrResult.Result;
+                }
+                else
+                {
+                    result = cfResult.Result;
+                }
+            }
+            else if (mrResult?.Result.success ?? false)
+            {
+                CTools.WriteResult(true, spinner);
+                result = mrResult.Result;
+            }
+            else if (cfResult?.Result.success ?? false)
+            {
+                CTools.WriteResult(true, spinner);
+                result = cfResult.Result;
+            }
+
+            if (mrResult?.Result.error == GetProjectResult.ErrorCode.ConnectionFailed)
+                CTools.WriteError("Connection to Modrinth failed", 1);
+            if (cfResult?.Result.error == GetProjectResult.ErrorCode.ConnectionFailed)
+                CTools.WriteError("Connection to CurseForge failed", 1);
+
+            if (result == null)
+            {
+                if (mrResult?.Result.error == GetProjectResult.ErrorCode.NotFound)
+                    result = mrResult.Result;
+                else if (cfResult?.Result.error == GetProjectResult.ErrorCode.NotFound)
+                    result = cfResult.Result;
+            }
+
+            return result;
         }
 
         static void Prepare()

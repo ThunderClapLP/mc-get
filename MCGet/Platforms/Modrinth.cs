@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -216,7 +215,7 @@ namespace MCGet.Platforms
 
         public static async Task<GetProjectResult> GetProject(string name, string minecraftVersion, string modVersion, string loader = "")
         {
-            GetProjectResult result = new GetProjectResult();
+            GetProjectResult result = new GetProjectResult(typeof(Modrinth));
             HttpClient client = new HttpClient();
             client.Timeout = TimeSpan.FromSeconds(10);
             client.DefaultRequestHeaders.UserAgent.ParseAdd(Program.api_user_agent);
@@ -304,7 +303,19 @@ namespace MCGet.Platforms
                     loaderString += suppLoader.ToString() + ",";
                 }
                 loaderString = loaderString.TrimEnd(',');
-                resStr = doc.RootElement.GetProperty("project_type") + "|" + loaderString + "|" + resStr;
+                result.loader = loaderString;
+                switch (doc.RootElement.GetProperty("project_type").GetString()?.ToLower() ?? "")
+                {
+                    case "modpack":
+                        result.projectType = ProjectType.Modpack;
+                        break;
+                    case "mod":
+                        result.projectType = ProjectType.Mod;
+                        break;
+                    default:
+                        result.projectType = ProjectType.Invalid;
+                        break;
+                }
 
                 result.urls.Add(resStr);
                 if (matchingElement?.TryGetProperty("dependencies", out JsonElement dependencies) ?? false)

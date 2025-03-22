@@ -8,6 +8,13 @@ using System.Threading.Tasks;
 
 namespace MCGet.Platforms
 {
+    public enum ProjectType
+    {
+        Invalid = 0,
+        Modpack = 1,
+        Mod = 2,
+    }
+
     public class SearchResult
     {
         public bool success = false;
@@ -28,6 +35,14 @@ namespace MCGet.Platforms
         public List<string> urls = new List<string>();
         public string name = "";
         public string slug = "";
+        public string loader = "";
+        public Type platformType;
+        public ProjectType projectType = ProjectType.Invalid;
+
+        public GetProjectResult(Type platformType)
+        {
+            this.platformType = platformType;
+        }
     }
 
     public abstract class Platform

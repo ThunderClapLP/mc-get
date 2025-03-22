@@ -371,7 +371,7 @@ namespace MCGet.Platforms
 
         public static async Task<GetProjectResult> GetProject(string name, string minecraftVersion, string modVersion, string loader = "")
         {
-            GetProjectResult result = new GetProjectResult();
+            GetProjectResult result = new GetProjectResult(typeof(CurseForge));
             HttpClient client = new HttpClient();
             client.Timeout = TimeSpan.FromSeconds(10);
 
@@ -508,12 +508,13 @@ namespace MCGet.Platforms
 
                 if (url != null)
                 {
+                    result.loader = loader;
                     if (type == 4471) //modpack
-                        url = "modpack|" + url;
+                        result.projectType = ProjectType.Modpack;
                     else if (type == 6) //mod
-                        url = "mod|" + loader + "|" + url;
+                        result.projectType = ProjectType.Mod;
                     else
-                        url = "unknown|" + url;
+                        result.projectType = ProjectType.Invalid;
 
                     result.urls.Add(url);
                     result.success = true;
