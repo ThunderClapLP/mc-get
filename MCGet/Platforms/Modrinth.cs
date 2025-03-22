@@ -285,7 +285,7 @@ namespace MCGet.Platforms
                 if (match && modVersion != "")
                     match = version.GetProperty("version_number").GetString()?.ToLower().Contains(modVersion.ToLower()) ?? false;
                 if (match && loader != "")
-                    match = version.GetProperty("loaders").EnumerateArray().Any((e) => e.GetString() == minecraftVersion);
+                    match = version.GetProperty("loaders").EnumerateArray().Any((e) => e.GetString() == loader);
                 return match;
             });
             JsonElement? matchingElement = null;
