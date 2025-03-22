@@ -54,7 +54,7 @@ namespace MCGet
             } catch (Exception) {}
 
             bool invalidArgs = true;
-            string invalidArgsSuggestion = "(<archivepath> | install <slug>)";
+            string[] invalidArgsSuggestion = new string[] { "<archivepath>", "install <slug>" };
             for (int i = 0; i < args.Length; i++)
             {
                 switch (args[i])
@@ -97,7 +97,7 @@ Commands:
 
     remove installation <search>
         removes an installation that fits the search term (either slug or id)
-    remove mod <installation>:<mod>
+    remove mod <installation> <mod>
         removes a mod from an installation
         both <installation> and <mod> are search terms (either slug or id)
     
@@ -107,6 +107,11 @@ Examples:
     {ExecutableName} install fabulously-optimized
     {ExecutableName} -s install fabulously-optimized
     {ExecutableName} Fabulously.Optimized-4.10.5.mrpack
+    {ExecutableName} list mods
+    {ExecutableName} list mods fabulously-optimized
+    {ExecutableName} remove installation 123
+    {ExecutableName} remove installation fabulously-optimized
+    {ExecutableName} remove mod fabulously-optimized sodium
 ".Replace("{ExecutableName}", Assembly.GetExecutingAssembly().GetName().Name));
                         Environment.Exit(0);
                         break;
@@ -183,7 +188,7 @@ Examples:
                         }
                         else
                         {
-                            invalidArgsSuggestion = "list installs/mods (search)";
+                            invalidArgsSuggestion = new string[] { "list installs", "list mods (search)" };
                         }
                         break;
                     case "remove":
@@ -199,7 +204,7 @@ Examples:
                         }
                         else
                         {
-                            invalidArgsSuggestion = "remove installation (<id> | <slug>)/mod (<install id> | <install slug>):(<mod id> <mod slug>)";
+                            invalidArgsSuggestion = new string[] { "remove installation (<id> | <slug>)", "remove mod (<install id> | <install slug>) (<mod id> <mod slug>)" };
                         }
                         break;
                     default:
@@ -214,7 +219,12 @@ Examples:
 
             if (invalidArgs || args.Length <= 0)
             {
-                CTools.WriteLine("Usage: " + Assembly.GetExecutingAssembly().GetName().Name + " " + invalidArgsSuggestion + "\n --help for all arguments");
+                CTools.WriteLine("Usage:");
+                foreach (string line in invalidArgsSuggestion)
+                {
+                    CTools.WriteLine("  " + Assembly.GetExecutingAssembly().GetName().Name + " " + line);
+                }
+                CTools.WriteLine("  " + Assembly.GetExecutingAssembly().GetName().Name + " --help for all arguments");
                 if (OperatingSystem.IsWindows())
                 {
                     CTools.Write("Press any key to exit");
@@ -241,7 +251,6 @@ Examples:
                 Prepare();
 
             Spinner spinner = new Spinner(CTools.CursorTop);
-            spinner.Update();
             switch(command)
             {
                 case COMMANDS.INSTALL:
@@ -483,7 +492,6 @@ Examples:
                             }
                             else
                             {
-                                CTools.WriteResult(false, spinner);
                                 if ((result?.error == GetProjectResult.ErrorCode.NotFound))
                                     CTools.WriteError("No project with slug or id '" + installName + "' was found" + (installGameVersion != "" ? (" for version " + installGameVersion) : ""));
                                 Environment.Exit(1);
@@ -610,7 +618,7 @@ Examples:
                     break;
                 case COMMANDS.REMOVE:
                     {
-                        List<Installation> installationSerchResult = commandParams.Count > 1 ? insManager.SearchInstallations(commandParams[1].Split(":")[0], true) : insManager.installations.installations;
+                        List<Installation> installationSerchResult = commandParams.Count > 1 ? insManager.SearchInstallations(commandParams[1], true) : insManager.installations.installations;
                         Installation? ins = null;
                         if (installationSerchResult.Count == 1)
                         {
@@ -686,7 +694,7 @@ Examples:
                             else
                             {
                                 //remove mod
-                                List<CustomMod> modSearchResult = commandParams.Count > 1 && commandParams[1].Split(":").Length >= 2 ? ins.customMods.FindAll((e) => (e.slug?.StartsWith(commandParams[1].Split(":")[1]) ?? false) || (e.projectId?.StartsWith(commandParams[1].Split(":")[1]) ?? false)) : ins.customMods;
+                                List<CustomMod> modSearchResult = commandParams.Count > 2 ? ins.customMods.FindAll((e) => (e.slug?.StartsWith(commandParams[2]) ?? false) || (e.projectId?.StartsWith(commandParams[2]) ?? false)) : ins.customMods;
                                 CustomMod? mod = null;
                                 if (modSearchResult.Count == 1)
                                 {
@@ -709,13 +717,16 @@ Examples:
 
                                 if (mod != null)
                                 {
+                                    CTools.WriteLine("Removing: " + mod.name);
                                     try
                                     {
-                                        if (mod.files != null && mod.files.Count > 0)
+                                        if (mod.files.Count > 0)
                                         {
                                             foreach (string file in mod.files)
                                             {
+                                                CTools.Write(file);
                                                 File.Delete(InstallationManager.LocalToGlobalPath(ins.installationDir + "/" + file));
+                                                CTools.WriteResult(true);
                                             }
                                         }
                                         else
@@ -724,13 +735,13 @@ Examples:
                                     }
                                     catch (Exception)
                                     {
+                                        if (mod.files.Count > 0)
+                                            CTools.WriteResult(false);
                                         CTools.WriteError("Deletion of at least one file failed! This will lead to inconsistent behaviour.\nPlease try again or delete them manually: ");
-                                        if (mod.files != null && mod.files.Count > 0)
+
+                                        foreach (string file in mod.files)
                                         {
-                                            foreach (string file in mod.files)
-                                            {
-                                                CTools.WriteLine(file);
-                                            }
+                                            CTools.WriteLine(file);
                                         }
                                         Environment.Exit(1);
                                     }
