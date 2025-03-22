@@ -269,7 +269,7 @@ Examples:
                             insManager.EnsureUniqueId(insManager.currInstallation);
 
                             //download archive
-                            if (result != null && result.urls != null && result.urls.Count > 0 && result.urls[0] != "")
+                            if (result != null && result.urls.Count > 0 && result.urls[0] != "")
                             {
                                 extractedName = result.name;
                                 insManager.currInstallation.slug = result.slug;
@@ -363,8 +363,7 @@ Examples:
                                 else if (result.projectType == ProjectType.Mod)
                                 {
                                     //single mod
-                                    CTools.WriteError("Single mod:", 0);
-                                    CTools.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(result.urls[0])));
+                                    CTools.WriteError("Single mod: " + result.name, 0);
                                     //check for existing installations
                                     List<Installation> existingInstallations = insManager.installations.installations;
                                     Installation? ins = null;
@@ -405,9 +404,21 @@ Examples:
                                         Environment.Exit(1);
                                     }
 
+                                    //get project again with mc version and loader from installation
+                                    //TODO: decide if install pack/mod would be better to avoid double search
+                                    result = GetProject(installName, ins.mcVersion ?? installGameVersion, installModVersion, ins.modloader?.Split("-")[0] ?? installLoader, result.platformType, spinner);
+                                    if (result == null || result.urls.Count == 0 || result.urls[0] == "")
+                                    {
+                                        CTools.WriteLine("No compatible version of the mod found for this installation");
+                                        Environment.Exit(1);
+                                    }
+
+
+                                    CTools.WriteLine("Install");
+                                    CTools.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(result.urls[0])));
                                     if (result.urls.Count > 1)
                                     {
-                                        CTools.WriteLine("With dependencies:");
+                                        CTools.WriteLine("with dependencies:");
                                         for (int i = 1; i < result.urls.Count; i++)
                                         {
                                             CTools.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(result.urls[i])));
@@ -865,6 +876,7 @@ Examples:
                 mrResult = Modrinth.GetProject(installName, installGameVersion, installModVersion, installLoader);
             if (platformType == null || platformType.Equals(typeof(CurseForge)))
                 cfResult = CurseForge.GetProject(installName, installGameVersion, installModVersion, installLoader);
+            spinner.top = CTools.CursorTop;
             spinner.msg = "Getting project info";
             spinner.StartAnimation();
             mrResult?.Wait();
@@ -894,6 +906,10 @@ Examples:
             {
                 CTools.WriteResult(true, spinner);
                 result = cfResult.Result;
+            }
+            else
+            {
+                CTools.WriteResult(false, spinner);
             }
 
             if (mrResult?.Result.error == GetProjectResult.ErrorCode.ConnectionFailed)
