@@ -90,10 +90,10 @@ Commands:
         searches for modrinth/curseforge projects
     
     list installs
-        list all installed modpacks
+        lists all installed modpacks
     list mods <search>
-        list all custom mods in installation
-        that fits the search term (either slug or id)
+        lists all custom mods in installation
+        that fit the search term (either slug or id)
 
     remove installation <search>
         removes an installation that fits the search term (either slug or id)
