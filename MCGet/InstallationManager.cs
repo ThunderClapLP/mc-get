@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Text.Json;
 using System.IO;
+using ConsoleTools;
 
 namespace MCGet
 {
@@ -86,9 +87,9 @@ namespace MCGet
             {
                 return JsonSerializer.Deserialize<InstallationsJson>(File.ReadAllText(Path.GetFullPath(path + filename)));
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                
+                CTools.WriteError(e.Message);
             }
             return null;
         }
@@ -110,9 +111,9 @@ namespace MCGet
                 JsonSerializerOptions options = new() { WriteIndented = true };
                 File.WriteAllText(path + filename, JsonSerializer.Serialize(installations, options));
             }
-            catch (Exception)
+            catch (Exception e)
             {
-
+                CTools.WriteError(e.Message);
                 return false;
             }
             return true;
