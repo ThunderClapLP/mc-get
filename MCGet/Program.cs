@@ -78,6 +78,7 @@ Flags:
     -cf / --curseforge  :  download from curseforge
     -m <path>           :  specifies minecraft installation path
     --path              :  specifies the target installation path
+                           can also be used as a filter in other commands
     -mc <version>       :  specifies the minecraft version
     --server            :  installs mod / modpack as server
     -v / --version      :  displays the current version
@@ -97,9 +98,11 @@ Commands:
 
     remove installation <search>
         removes an installation that fits the search term (either slug or id)
+        --path can also be used as a filter
     remove mod <installation> <mod>
         removes a mod from an installation
         both <installation> and <mod> are search terms (either slug or id)
+        --path can also be used as a filter
     
 Examples:
     {ExecutableName} install sodium:0.6.6:fabric
@@ -288,6 +291,8 @@ Examples:
 
                                     //check for existing installations
                                     List<Installation> existingInstallations = insManager.GetInstallationsBySlug(insManager.currInstallation.slug);
+                                    if (insManager.currInstallation.installationDir != "") //filter by --path
+                                        existingInstallations = existingInstallations.FindAll((e) => InstallationManager.LocalToGlobalPath(e.installationDir).Replace("\\", "/").StartsWith(InstallationManager.LocalToGlobalPath(insManager.currInstallation.installationDir).Replace("\\", "/")));
                                     if (existingInstallations.Count > 0)
                                     {
                                         if (!insManager.currInstallation.isServer && CTools.ConfirmDialog("Upgrade existing installation?", true))
@@ -375,6 +380,8 @@ Examples:
                                     CTools.WriteError("Single mod: " + result.name, 0);
                                     //check for existing installations
                                     List<Installation> existingInstallations = insManager.installations.installations;
+                                    if (insManager.currInstallation.installationDir != "") //filter by --path
+                                        existingInstallations = existingInstallations.FindAll((e) => InstallationManager.LocalToGlobalPath(e.installationDir).Replace("\\", "/").StartsWith(InstallationManager.LocalToGlobalPath(insManager.currInstallation.installationDir).Replace("\\", "/")));
                                     Installation? ins = null;
                                     if (existingInstallations.Count > 0)
                                     {
@@ -544,7 +551,10 @@ Examples:
                             string profilePath = insManager.installations.settings.minecraftPath;
                             if (profilePath != "")
                                 ph.LoadProfiles(profilePath + "/launcher_profiles.json");
-                            foreach (Installation install in insManager.installations.installations)
+                            List<Installation> installs = insManager.installations.installations;
+                            if (insManager.currInstallation.installationDir != "") //filter by --path
+                                installs = installs.FindAll((e) => InstallationManager.LocalToGlobalPath(e.installationDir).Replace("\\", "/").StartsWith(InstallationManager.LocalToGlobalPath(insManager.currInstallation.installationDir).Replace("\\", "/")));
+                            foreach (Installation install in installs)
                             {
                                 if (profilePath != install.minecraftDir)
                                 {
@@ -559,6 +569,8 @@ Examples:
                         {
                             //list mods
                             List<Installation> searchResult = commandParams.Count > 1 ? insManager.SearchInstallations(commandParams[1], true) : insManager.installations.installations;
+                            if (insManager.currInstallation.installationDir != "") //filter by --path
+                                searchResult = searchResult.FindAll((e) => InstallationManager.LocalToGlobalPath(e.installationDir).Replace("\\", "/").StartsWith(InstallationManager.LocalToGlobalPath(insManager.currInstallation.installationDir).Replace("\\", "/")));
                             Installation? ins = null;
                             if (searchResult.Count == 1)
                             {
@@ -619,6 +631,8 @@ Examples:
                 case COMMANDS.REMOVE:
                     {
                         List<Installation> installationSerchResult = commandParams.Count > 1 ? insManager.SearchInstallations(commandParams[1], true) : insManager.installations.installations;
+                        if (insManager.currInstallation.installationDir != "") //filter by --path
+                            installationSerchResult = installationSerchResult.FindAll((e) => InstallationManager.LocalToGlobalPath(e.installationDir).Replace("\\", "/").StartsWith(InstallationManager.LocalToGlobalPath(insManager.currInstallation.installationDir).Replace("\\", "/")));
                         Installation? ins = null;
                         if (installationSerchResult.Count == 1)
                         {
@@ -630,7 +644,7 @@ Examples:
                             string profilePath = insManager.installations.settings.minecraftPath;
                             if (profilePath != "")
                                 ph.LoadProfiles(profilePath + "/launcher_profiles.json");
-                            CTools.WriteLine("    " + CTools.LimitText("ID", int.MaxValue.ToString().Length, true) + " | ProfileName | slug");
+                            CTools.WriteLine("    " + CTools.LimitText("ID", int.MaxValue.ToString().Length, true) + " | ProfileName | slug | DirectoryName");
                             int insRes = CTools.ListDialog("Choose installation",
                                 installationSerchResult.Select((e) => {
                                     if (profilePath != e.minecraftDir)
@@ -638,7 +652,7 @@ Examples:
                                         profilePath = e.minecraftDir;
                                         ph.LoadProfiles(profilePath + "/launcher_profiles.json");
                                     }
-                                    return CTools.LimitText(e.Id ?? "??", int.MaxValue.ToString().Length, true) + " | " + (ph.GetProfileName(e.modloaderProfile ?? "") ?? "??") + " | " + (e.slug ?? "??");
+                                    return CTools.LimitText(e.Id ?? "??", int.MaxValue.ToString().Length, true) + " | " + (ph.GetProfileName(e.modloaderProfile ?? "") ?? "??") + " | " + (e.slug ?? "??") + " | " + e.installationDir.Replace("\\", "/").Split("/").Last();
                                 }));
                             if (insRes < 0)
                             {
