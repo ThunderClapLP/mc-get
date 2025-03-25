@@ -328,6 +328,11 @@ Examples:
                                     }
                                     if (insManager.currInstallation.isServer)
                                     {
+                                        if ((AppContext.BaseDirectory ?? System.IO.Directory.GetCurrentDirectory()).Replace("\\", "/").TrimEnd('/') == InstallationManager.LocalToGlobalPath(insManager.currInstallation.installationDir.Replace("\\", "/").TrimEnd('/')))
+                                        {
+                                            CTools.WriteError("Can't install server directly in the " + Assembly.GetExecutingAssembly().GetName().Name + " directory!");
+                                            Environment.Exit(1);
+                                        }
                                         Installation? ins = insManager.installations.installations.Find((e) => e.installationDir == insManager.currInstallation.installationDir);
                                         if (ins != null)
                                         {
