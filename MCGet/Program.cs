@@ -824,6 +824,10 @@ Examples:
                 }
                 bar.Clear();
                 CTools.WriteResult(true);
+                //TODO: organize this better! Can't get mc version and modloader this way. Extract from CurseForge?
+                insManager.currInstallation.modpackName = extractedName;
+                insManager.AddInstallation(insManager.currInstallation);
+                insManager.Save();
                 Environment.Exit(0);
             }
 
