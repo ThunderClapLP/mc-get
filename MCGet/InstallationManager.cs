@@ -80,12 +80,12 @@ namespace MCGet
             if (path == "")
                 return null;
 
-            if (!File.Exists(Path.GetFullPath(path + filename)))
+            if (!File.Exists(Path.GetFullPath(Path.Join(path, filename))))
                 return null;
 
             try
             {
-                return JsonSerializer.Deserialize<InstallationsJson>(File.ReadAllText(Path.GetFullPath(path + filename)));
+                return JsonSerializer.Deserialize<InstallationsJson>(File.ReadAllText(Path.GetFullPath(Path.Join(path, filename))));
             }
             catch (Exception e)
             {
@@ -109,7 +109,7 @@ namespace MCGet
             try
             {
                 JsonSerializerOptions options = new() { WriteIndented = true };
-                File.WriteAllText(path + filename, JsonSerializer.Serialize(installations, options));
+                File.WriteAllText(Path.Join(path, filename), JsonSerializer.Serialize(installations, options));
             }
             catch (Exception e)
             {
