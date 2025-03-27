@@ -77,7 +77,7 @@ Flags:
     -mr / --modrinth    :  download from modrinth
     -cf / --curseforge  :  download from curseforge
     -m <path>           :  specifies minecraft installation path
-    --path              :  specifies the target installation path
+    --path <path>       :  specifies the target installation path
                            can also be used as a filter in other commands
     -mc <version>       :  specifies the minecraft version
     --server            :  installs mod / modpack as server
