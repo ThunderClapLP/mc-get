@@ -5,13 +5,14 @@ A console application to download and install mods and modpacks for Minecraft or
 > [!NOTE]
 > This readme is for the development version, it may differ from the latest release. You can view the readme for the latest release [here](../v0.3.1/readme.md).
 
+> [!NOTE]
+> Breaking change from 0.3.x: mc-get no longer installs modpacks in the .minecraft folder directly! It now supports managing multiple concurrent Minecraft installations.
+
 ## Modding Platform Support
 
 Supports downloading from the two major modding platforms [Modrinth](https://modrinth.com/) and [CurseForge](https://www.curseforge.com/)!\
 🚧 CurseForge is WIP and not supported in any release yet. In order to test it in main branch, you need to set the urls in [CurseForge.cs](MCGet/Platforms/CurseForge.cs) and add api key handling yourself 🚧
 
-> [!NOTE]
-> Only supports installing mods in the .minecraft directory at the moment (But it is planned to add the ability to fully manage multiple modpacks and installations!). In the meantime, have a look at this [list of awesome projects](https://github.com/modrinth/awesome) and see if something there fits your needs.
 
 ## Usage
 
@@ -21,11 +22,12 @@ Supports downloading from the two major modding platforms [Modrinth](https://mod
 
     Flags:
         -h / --help         :  displays this help page
-        -s                  :  performs a silent install. No user input needed
-        -f / --fix-missing  :  retries to download failed mods
+        -s / --silent       :  performs a silent install. No user input needed
         -mr / --modrinth    :  download from modrinth
         -cf / --curseforge  :  download from curseforge
         -m <path>           :  specifies minecraft installation path
+        --path <path>       :  specifies the target installation path
+                               can also be used as a filter in other commands
         -mc <version>       :  specifies the minecraft version
         --server            :  installs mod / modpack as server
         -v / --version      :  displays the current version
@@ -35,10 +37,21 @@ Supports downloading from the two major modding platforms [Modrinth](https://mod
             installs a mod / modpack
 
         search <query>
-            searches for modrinth projects
+            searches for modrinth/curseforge projects
 
-        restore
-            deletes modpack and restores old state
+        list installs
+            lists all installed modpacks
+        list mods <search>
+            lists all custom mods in installation
+            that fit the search term (either slug or id)
+
+        remove installation <search>
+            removes an installation that fits the search term (either slug or id)
+            --path can also be used as a filter
+        remove mod <installation> <mod>
+            removes a mod from an installation
+            both <installation> and <mod> are search terms (either slug or id)
+            --path can also be used as a filter
 
     Examples:
         mc-get install sodium:0.6.6:fabric
@@ -46,7 +59,11 @@ Supports downloading from the two major modding platforms [Modrinth](https://mod
         mc-get install fabulously-optimized
         mc-get -s install fabulously-optimized
         mc-get Fabulously.Optimized-4.10.5.mrpack
-        mc-get restore
+        mc-get list mods
+        mc-get list mods fabulously-optimized
+        mc-get remove installation 123
+        mc-get remove installation fabulously-optimized
+        mc-get remove mod fabulously-optimized sodium
 
 ## OS Compatibility
 
