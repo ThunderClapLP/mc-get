@@ -345,7 +345,15 @@ Examples:
                                     if (insManager.currInstallation.installationDir == "")
                                     {
                                         if (CTools.ConfirmDialog("Install modpack into \"" + InstallationManager.LocalToGlobalPath(insManager.installations.settings.defaultInstallationPath).Replace("\\", "/") + "\"?", true))
+                                        {
                                             insManager.currInstallation.installationDir = insManager.installations.settings.defaultInstallationPath;
+                                            try
+                                            {
+                                                //make sure install dir exists for disk space calculation to work on linux
+                                                Directory.CreateDirectory(InstallationManager.LocalToGlobalPath(insManager.installations.settings.defaultInstallationPath));
+                                            }
+                                            catch (Exception) {}
+                                        }
                                         else
                                         {
                                             bool insDirValid = false;

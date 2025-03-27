@@ -52,7 +52,10 @@ namespace MCGet.Platforms
                 //get free space on disc
                 try
                 {
-                    long freeSpace = Math.Min(new DriveInfo(Program.dir).AvailableFreeSpace / 1024, new DriveInfo(InstallationManager.LocalToGlobalPath(Program.insManager.currInstallation.installationDir)).AvailableFreeSpace / 1024);
+                    string drivePath = InstallationManager.LocalToGlobalPath(Program.insManager.currInstallation.installationDir);
+                    if (!Directory.Exists(drivePath))
+                        drivePath = Directory.GetParent(drivePath)?.FullName ?? "";
+                    long freeSpace = Math.Min(new DriveInfo(Program.dir).AvailableFreeSpace / 1024, new DriveInfo(drivePath).AvailableFreeSpace / 1024);
 
                     if (requiredSpace > freeSpace - 10000) { //10MB buffer to prevent issues
                         CTools.WriteError("Not enough disk space! " + Math.Max((requiredSpace - freeSpace - 10000) / 1024, 1) + " MB more requiered.");
