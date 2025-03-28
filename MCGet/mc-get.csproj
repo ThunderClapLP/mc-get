@@ -9,7 +9,28 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
     <TrimMode>partial</TrimMode>
+    <Description>A console application to download and install mods and modpacks for Minecraft or a Minecraft server</Description>
+    <PackageMaintainer>ThunderClapLP</PackageMaintainer>
 	  <!-- <UseAppHost>true</UseAppHost> -->
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <SelfContained>True</SelfContained>
+    <RuntimeIdentifiers>win-x86;win-x64;linux-x64;linux-arm64;linux-arm;osx-x64</RuntimeIdentifiers>
+    <DebugSymbols>False</DebugSymbols>
+    <DebugType>None</DebugType>
+  </PropertyGroup>
+
+  <!-- for packaging - https://github.com/quamotion/dotnet-packaging -->
+  <ItemGroup Condition="'$(CompletionPackage)' == 'true'">
+    <Content Include="package_files/shell_completion/bash_completion.sh" CopyToPublishDirectory="PreserveNewest" LinuxFileMode="1755">
+        <LinuxPath>/usr/share/bash-completion/completions/mc-get</LinuxPath>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(CompletionTarball)' == 'true'">
+    <Content Include="package_files/shell_completion/bash_completion.sh" CopyToPublishDirectory="PreserveNewest" LinuxFileMode="1755">
+      <LinuxPath>/bash_completion.sh</LinuxPath>
+    </Content>
+  </ItemGroup>
 </Project>
