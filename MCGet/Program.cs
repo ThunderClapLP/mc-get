@@ -1182,7 +1182,7 @@ Examples:
 
             Process java = new Process();
             java.StartInfo.FileName = "java";
-            java.StartInfo.Arguments = "--version";
+            java.StartInfo.Arguments = "-version";
             try
             {
                 java.StartInfo.RedirectStandardOutput = true;
