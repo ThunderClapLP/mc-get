@@ -31,6 +31,7 @@ namespace MCGet
         public string archivePath { get; set; } = "";
         public string minecraftDir { get; set; } = "";
         public string installationDir { get; set; } = "";
+        public bool installationDirWasEmpty { get; set; } = true;
 
         public string? Id { get; set; }
         public string? modloaderProfile { get; set; }

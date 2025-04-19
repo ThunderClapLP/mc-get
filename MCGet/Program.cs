@@ -340,6 +340,18 @@ Examples:
                                             insManager.currInstallation = ins;
                                             CTools.WriteError("Upgrading Server", 0);
                                         }
+                                        else if (Directory.Exists(InstallationManager.LocalToGlobalPath(insManager.currInstallation.installationDir.Replace("\\", "/"))))
+                                        {
+                                            if (Directory.GetFileSystemEntries(InstallationManager.LocalToGlobalPath(insManager.currInstallation.installationDir.Replace("\\", "/"))).Length > 0)
+                                            {
+                                                CTools.WriteError("Installation directory is not empty. The remove command will not be able to delete the installed files!", 1);
+                                                if (!(cSilent || CTools.ConfirmDialog("Continue anyway?", false)))
+                                                {
+                                                    Environment.Exit(1);
+                                                }
+                                                insManager.currInstallation.installationDirWasEmpty = false;
+                                            }
+                                        }
                                     }
 
                                     if (insManager.currInstallation.installationDir == "")
@@ -689,7 +701,14 @@ Examples:
                                     CTools.Write("Removing installation");
                                     try
                                     {
-                                        if (Directory.Exists(InstallationManager.LocalToGlobalPath(ins.installationDir)))
+                                        if (!ins.installationDirWasEmpty)
+                                        {
+                                            insManager.RemoveInstallation(ins);
+                                            CTools.WriteResult(true);
+                                            CTools.WriteError("The installation directory was not empty on installation. You need to remove the files manually.", 1);
+                                            CTools.WriteLine("Dir: " + InstallationManager.LocalToGlobalPath(ins.installationDir));
+                                        }
+                                        else if (Directory.Exists(InstallationManager.LocalToGlobalPath(ins.installationDir)))
                                         {
                                             Directory.Delete(InstallationManager.LocalToGlobalPath(ins.installationDir), true);
                                             insManager.RemoveInstallation(ins);
