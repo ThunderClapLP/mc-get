@@ -1174,7 +1174,7 @@ Examples:
 
         public static bool DownloadJavaIfNotPresent()
         {
-            if (File.Exists(dir + "/java/jdk-21.0.6+7-jre/bin/java.exe") || File.Exists(dir + "/java/jdk-21.0.6+7-jre/bin/java"))
+            if (File.Exists(dir + "/java/jdk-21.0.6+7-jre/bin/java.exe") || File.Exists(dir + "/java/jdk-21.0.6+7-jre/bin/java") || File.Exists(dir + "/java/jdk-21.0.6+7-jre/Contents/Home/bin/java"))
             {
                 CTools.WriteError("Found internal Java", 0);
                 return true; //already downloaded
@@ -1185,13 +1185,16 @@ Examples:
             java.StartInfo.Arguments = "-version";
             try
             {
+                string output = "";
                 java.StartInfo.RedirectStandardOutput = true;
+                java.StartInfo.RedirectStandardError = true;
                 java.Start();
+                output = java.StandardOutput.ReadToEnd() + java.StandardError.ReadToEnd();
                 java.WaitForExit();
 
                 //check if java version
                 Regex versionRegex = new Regex("\\d+\\.\\d+\\.\\d+");
-                Match match = versionRegex.Match(java.StandardOutput.ReadToEnd());
+                Match match = versionRegex.Match(output);
                 if (match.Success)
                 {
                     CTools.WriteError("Found Java: " + match.Value, 0);
@@ -1207,18 +1210,39 @@ Examples:
             {
                 string javaUrl = "";
                 if (System.OperatingSystem.IsWindows())
-                    javaUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_x64_windows_hotspot_21.0.6_7.zip";
+                {
+                    if (System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.X64)
+                        javaUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_x64_windows_hotspot_21.0.6_7.zip";
+                    else if (System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.Arm64)
+                        javaUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_aarch64_linux_hotspot_21.0.6_7.tar.gz";
+
+                }
                 else if (System.OperatingSystem.IsLinux())
                 {
 #if NET7_0_OR_GREATER
-                    javaUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_x64_linux_hotspot_21.0.6_7.tar.gz";
+                    if (System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.X64)
+                        javaUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_x64_linux_hotspot_21.0.6_7.tar.gz";
+                    else if (System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.Arm64)
+                        javaUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_aarch64_linux_hotspot_21.0.6_7.tar.gz";
 #else
-                    CTools.WriteError("mc-get needs to be build for .net 7.0 or later to download java on linux!\nPlease manually install java 17 or later in your distribution.", 1);
-                    return false;
+                CTools.WriteError("mc-get needs to be build for .net 7.0 or later to download java on linux!\nPlease manually install java 17 or later in your distribution.", 1);
+                return false;
 #endif
                 }
-                else
-                    return false; //system not compatable
+                else if (System.OperatingSystem.IsMacOS())
+                {
+#if NET7_0_OR_GREATER
+                    if (System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.X64)
+                        javaUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_x64_mac_hotspot_21.0.6_7.tar.gz";
+                    else if (System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.Arm64)
+                        javaUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_aarch64_mac_hotspot_21.0.6_7.tar.gz";
+#else
+                CTools.WriteError("mc-get needs to be build for .net 7.0 or later to download java on mac!\nPlease manually install java 17 or later.", 1);
+                return false;
+#endif
+                }
+                if (javaUrl == "")
+                        return false; //system not compatable
                 Spinner spinner = new Spinner("Downloading Java", CTools.CursorTop);
                 if (Networking.DownloadFile(javaUrl, dir + tempDir + "java.zip", spinner))
                 {
@@ -1231,9 +1255,9 @@ Examples:
 
                         if (System.OperatingSystem.IsWindows())
                             ZipFile.ExtractToDirectory(dir + tempDir + "java.zip", dir + "/java/", true);
-                        else if (System.OperatingSystem.IsLinux())
+                        else if (System.OperatingSystem.IsLinux() || System.OperatingSystem.IsMacOS())
                         {
-                            //file is a tar.gz on linux
+                            //file is a tar.gz on linux and mac
 #if NET7_0_OR_GREATER
                             TarFile.ExtractToDirectory(
                                 new GZipStream(new FileStream(dir + tempDir + "java.zip", FileMode.Open, FileAccess.Read),
@@ -1241,8 +1265,9 @@ Examples:
                                 dir + "/java/", overwriteFiles: true);
 
                             //mark as executable on linux
-                            if (!File.GetUnixFileMode(dir + "/java/jdk-21.0.6+7-jre/bin/java").HasFlag(UnixFileMode.UserExecute))
-                                File.SetUnixFileMode(dir + "/java/jdk-21.0.6+7-jre/bin/java", UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute | UnixFileMode.SetUser);
+                            if (System.OperatingSystem.IsLinux())
+                                if (!File.GetUnixFileMode(dir + "/java/jdk-21.0.6+7-jre/bin/java").HasFlag(UnixFileMode.UserExecute))
+                                    File.SetUnixFileMode(dir + "/java/jdk-21.0.6+7-jre/bin/java", UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute | UnixFileMode.SetUser);
 #else
                             //mark as executable on linux
                             //use File.SetUnixFileMode when using dotnet 8

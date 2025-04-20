@@ -40,7 +40,10 @@ namespace MCGet.ModLoaders
 
             if (Program.DownloadJavaIfNotPresent())
             {
-                javaPath = Program.dir + "/java/jdk-21.0.6+7-jre/bin/";
+                if (!System.OperatingSystem.IsMacOS())
+                    javaPath = Program.dir + "/java/jdk-21.0.6+7-jre/bin/";
+                else
+                    javaPath = Program.dir + "/java/jdk-21.0.6+7-jre/Contents/Home/bin/";
             }
 
             return true;
