@@ -326,66 +326,8 @@ Examples:
                                             }
                                         }
                                     }
-                                    if (insManager.currInstallation.isServer)
-                                    {
-                                        if ((AppContext.BaseDirectory ?? System.IO.Directory.GetCurrentDirectory()).Replace("\\", "/").TrimEnd('/') == InstallationManager.LocalToGlobalPath(insManager.currInstallation.installationDir.Replace("\\", "/").TrimEnd('/')))
-                                        {
-                                            CTools.WriteError("Can't install server directly in the " + Assembly.GetExecutingAssembly().GetName().Name + " directory!");
-                                            Environment.Exit(1);
-                                        }
-                                        Installation? ins = insManager.installations.installations.Find((e) => e.installationDir == insManager.currInstallation.installationDir);
-                                        if (ins != null)
-                                        {
-                                            modifyExisting = true;
-                                            insManager.currInstallation = ins;
-                                            CTools.WriteError("Upgrading Server", 0);
-                                        }
-                                        else if (Directory.Exists(InstallationManager.LocalToGlobalPath(insManager.currInstallation.installationDir.Replace("\\", "/"))))
-                                        {
-                                            if (Directory.GetFileSystemEntries(InstallationManager.LocalToGlobalPath(insManager.currInstallation.installationDir.Replace("\\", "/"))).Length > 0)
-                                            {
-                                                CTools.WriteError("Installation directory is not empty. The remove command will not be able to delete the installed files!", 1);
-                                                if (!(cSilent || CTools.ConfirmDialog("Continue anyway?", false)))
-                                                {
-                                                    Environment.Exit(1);
-                                                }
-                                                insManager.currInstallation.installationDirWasEmpty = false;
-                                            }
-                                        }
-                                    }
-
-                                    if (insManager.currInstallation.installationDir == "")
-                                    {
-                                        if (CTools.ConfirmDialog("Install modpack into \"" + InstallationManager.LocalToGlobalPath(insManager.installations.settings.defaultInstallationPath).Replace("\\", "/") + "\"?", true))
-                                        {
-                                            insManager.currInstallation.installationDir = insManager.installations.settings.defaultInstallationPath;
-                                            try
-                                            {
-                                                //make sure install dir exists for disk space calculation to work on linux
-                                                Directory.CreateDirectory(InstallationManager.LocalToGlobalPath(insManager.installations.settings.defaultInstallationPath));
-                                            }
-                                            catch (Exception) {}
-                                        }
-                                        else
-                                        {
-                                            bool insDirValid = false;
-                                            while (!insDirValid)
-                                            {
-                                                CTools.Write("Enter target installation dir: ");
-                                                insManager.currInstallation.installationDir = Console.ReadLine() ?? "";
-                                                if (Directory.Exists(insManager.currInstallation.installationDir))
-                                                    insDirValid = true;
-                                                else
-                                                    CTools.WriteError("Directory does not exist");
-                                            }
-
-                                            //set default?
-                                            if (CTools.ConfirmDialog("Use selected dir for all future installations?", false))
-                                                insManager.installations.settings.defaultInstallationPath = insManager.currInstallation.installationDir;
-                                        }
-                                    }
-                                    if (!modifyExisting && !insManager.currInstallation.isServer)
-                                        insManager.currInstallation.installationDir = insManager.currInstallation.installationDir.Replace("\\", "/").TrimEnd('/') + "/" + insManager.currInstallation.slug + insManager.currInstallation.Id;
+                                    
+                                    SetupInstallDir();
 
                                     spinner.top = CTools.CursorTop;
                                     spinner.msg = "Downloading pack file";
@@ -803,6 +745,9 @@ Examples:
                     {
                         //install archive
                         insManager.EnsureUniqueId(insManager.currInstallation);
+                        extractedName = Path.GetFileNameWithoutExtension(insManager.currInstallation.archivePath);
+
+                        SetupInstallDir();
                     }
                     break;
             }
@@ -987,6 +932,71 @@ Examples:
             }
 
             return result;
+        }
+
+        static void SetupInstallDir()
+        {
+            if (insManager.currInstallation.isServer)
+            {
+                if ((AppContext.BaseDirectory ?? System.IO.Directory.GetCurrentDirectory()).Replace("\\", "/").TrimEnd('/') == InstallationManager.LocalToGlobalPath(insManager.currInstallation.installationDir.Replace("\\", "/").TrimEnd('/')))
+                {
+                    CTools.WriteError("Can't install server directly in the " + Assembly.GetExecutingAssembly().GetName().Name + " directory!");
+                    Environment.Exit(1);
+                }
+                Installation? ins = insManager.installations.installations.Find((e) => e.installationDir == insManager.currInstallation.installationDir);
+                if (ins != null)
+                {
+                    modifyExisting = true;
+                    insManager.currInstallation = ins;
+                    CTools.WriteError("Upgrading Server", 0);
+                }
+                else if (Directory.Exists(InstallationManager.LocalToGlobalPath(insManager.currInstallation.installationDir.Replace("\\", "/"))))
+                {
+                    if (Directory.GetFileSystemEntries(InstallationManager.LocalToGlobalPath(insManager.currInstallation.installationDir.Replace("\\", "/"))).Length > 0)
+                    {
+                        CTools.WriteError("Installation directory is not empty. The remove command will not be able to delete the installed files!", 1);
+                        if (!(cSilent || CTools.ConfirmDialog("Continue anyway?", false)))
+                        {
+                            Environment.Exit(1);
+                        }
+                        insManager.currInstallation.installationDirWasEmpty = false;
+                    }
+                }
+            }
+
+            if (insManager.currInstallation.installationDir == "")
+            {
+                if (CTools.ConfirmDialog("Install modpack into \"" + InstallationManager.LocalToGlobalPath(insManager.installations.settings.defaultInstallationPath).Replace("\\", "/") + "\"?", true))
+                {
+                    insManager.currInstallation.installationDir = insManager.installations.settings.defaultInstallationPath;
+                    try
+                    {
+                        //make sure install dir exists for disk space calculation to work on linux
+                        Directory.CreateDirectory(InstallationManager.LocalToGlobalPath(insManager.installations.settings.defaultInstallationPath));
+                    }
+                    catch (Exception) { }
+                }
+                else
+                {
+                    bool insDirValid = false;
+                    while (!insDirValid)
+                    {
+                        CTools.Write("Enter target installation dir: ");
+                        insManager.currInstallation.installationDir = Console.ReadLine() ?? "";
+                        if (Directory.Exists(insManager.currInstallation.installationDir))
+                            insDirValid = true;
+                        else
+                            CTools.WriteError("Directory does not exist");
+                    }
+
+                    //set default?
+                    if (CTools.ConfirmDialog("Use selected dir for all future installations?", false))
+                        insManager.installations.settings.defaultInstallationPath = insManager.currInstallation.installationDir;
+                }
+            }
+            if (!modifyExisting && !insManager.currInstallation.isServer)
+                insManager.currInstallation.installationDir = insManager.currInstallation.installationDir.Replace("\\", "/").TrimEnd('/') + "/" + insManager.currInstallation.slug + insManager.currInstallation.Id;
+
         }
 
         static void Prepare()
