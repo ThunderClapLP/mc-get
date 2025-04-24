@@ -1133,6 +1133,7 @@ Examples:
             }
 
             Spinner spinner = new Spinner("Extracting: " + Path.GetFileName(insManager.currInstallation.archivePath), CTools.CursorTop);
+            spinner.Draw();
             try
             {
                 ZipFile.ExtractToDirectory(insManager.currInstallation.archivePath, dir + tempDir + "archive/");
