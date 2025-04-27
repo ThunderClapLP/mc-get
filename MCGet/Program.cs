@@ -81,7 +81,7 @@ Flags:
                            can also be used as a filter in other commands
     -mc <version>       :  specifies the minecraft version
     --server            :  installs mod / modpack as server
-    -v / --version      :  displays the current version
+    --version           :  displays the current version
 
 Commands:
     install (<slug> | <id> | <name>):<mod(pack)version>:<modloader>
@@ -154,6 +154,9 @@ Examples:
                     case "-v":
                     case "--version":
                         CTools.WriteLine(Assembly.GetExecutingAssembly().GetName().Name + " Version " + Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "unknown");
+                        //TODO: remove -v in 0.5
+                        if (args[i] == "-v")
+                            CTools.WriteError("Deprecated! Use --version instead. -v will be removed in a future version.", 1);
                         Environment.Exit(0);
                         break;
                     case "install":
