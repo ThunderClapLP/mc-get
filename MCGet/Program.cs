@@ -68,54 +68,53 @@ namespace MCGet
                     case "--help":
                         CTools.WriteLine(@"
 Usage: 
-    {ExecutableName} (flags) <archivepath>
-    {ExecutableName} (flags) <command> (parameters)
+  {ExecutableName} (flags) <archivepath>
+  {ExecutableName} (flags) <command> (parameters)
 
 Flags:
-    -h / --help         :  displays this help page
-    -s / --silent       :  performs a silent install. No user input needed
-    -p / --platform <platform> :  installs from specified platform
-                    <mr | modrinth>   :  download from modrinth
-                    <cf | curseforge> :  download from curseforge
-    -m <path>           :  specifies minecraft installation path
-    --path <path>       :  specifies the target installation path
-                           can also be used as a filter in other commands
-    -mc <version>       :  specifies the minecraft version
-    --server            :  installs mod / modpack as server
-    --version           :  displays the current version
+  -h, --help                :  displays this help page
+  -s, --silent              :  performs a silent install. No user input needed
+  -p, --platform <platform> :  installs from specified platform
+                               either modrinth (mr) or curseforge (cf)
+  -m <path>                 :  specifies minecraft installation path
+  --path <path>             :  specifies the target installation path
+                               can also be used as a filter in other commands
+  -mc <version>             :  specifies the minecraft version
+  --server                  :  installs mod / modpack as server
+  --version                 :  displays the current version
 
 Commands:
-    install (<slug> | <id> | <name>):<mod(pack)version>:<modloader>
-        installs a mod / modpack
+  install <slug | id | name>:<mod(pack)version>:<modloader>
+    installs a mod / modpack
 
-    search <query>
-        searches for modrinth/curseforge projects
-    
-    list installs
-        lists all installed modpacks
-    list mods <search>
-        lists all custom mods in installation
-        that fit the search term (either slug or id)
+  search <query>
+    searches for modrinth/curseforge projects
 
-    remove installation <search>
-        removes an installation that fits the search term (either slug or id)
-        --path can also be used as a filter
-    remove mod <installation> <mod>
-        removes a mod from an installation
-        both <installation> and <mod> are search terms (either slug or id)
-        --path can also be used as a filter
-    
+  list installs
+    lists all installed modpacks
+  list mods <search>
+    lists all custom mods in installation
+    that fit the search term (either slug or id)
+
+  remove installation <search>
+    removes an installation that fits the search term (either slug or id)
+    --path can also be used as a filter
+  remove mod <installation> <mod>
+    removes a mod from an installation
+    both <installation> and <mod> are search terms (either slug or id)
+    --path can also be used as a filter
+
 Examples:
-    {ExecutableName} install sodium:0.6.6:fabric
-    {ExecutableName} -mc 1.19.3 install fabulously-optimized
-    {ExecutableName} install fabulously-optimized
-    {ExecutableName} -s install fabulously-optimized
-    {ExecutableName} Fabulously.Optimized-4.10.5.mrpack
-    {ExecutableName} list mods
-    {ExecutableName} list mods fabulously-optimized
-    {ExecutableName} remove installation 123
-    {ExecutableName} remove installation fabulously-optimized
-    {ExecutableName} remove mod fabulously-optimized sodium
+  {ExecutableName} install sodium:0.6.6:fabric
+  {ExecutableName} -mc 1.19.3 install fabulously-optimized
+  {ExecutableName} install fabulously-optimized
+  {ExecutableName} -s install fabulously-optimized
+  {ExecutableName} Fabulously.Optimized-4.10.5.mrpack
+  {ExecutableName} list mods
+  {ExecutableName} list mods fabulously-optimized
+  {ExecutableName} remove installation 123
+  {ExecutableName} remove installation fabulously-optimized
+  {ExecutableName} remove mod fabulously-optimized sodium
 ".Replace("{ExecutableName}", Assembly.GetExecutingAssembly().GetName().Name));
                         Environment.Exit(0);
                         break;

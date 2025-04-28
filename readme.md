@@ -17,53 +17,53 @@ Supports downloading from the two major modding platforms [Modrinth](https://mod
 ## Usage
 
     Usage:
-        mc-get (flags) <archivepath>
-        mc-get (flags) <command> (parameters)
-
+      mc-get (flags) <archivepath>
+      mc-get (flags) <command> (parameters)
+    
     Flags:
-        -h / --help         :  displays this help page
-        -s / --silent       :  performs a silent install. No user input needed
-        -mr / --modrinth    :  download from modrinth
-        -cf / --curseforge  :  download from curseforge
-        -m <path>           :  specifies minecraft installation path
-        --path <path>       :  specifies the target installation path
-                               can also be used as a filter in other commands
-        -mc <version>       :  specifies the minecraft version
-        --server            :  installs mod / modpack as server
-        --version           :  displays the current version
-
+      -h, --help                :  displays this help page
+      -s, --silent              :  performs a silent install. No user input needed
+      -p, --platform <platform> :  installs from specified platform
+                                   either modrinth (mr) or curseforge (cf)
+      -m <path>                 :  specifies minecraft installation path
+      --path <path>             :  specifies the target installation path
+                                   can also be used as a filter in other commands
+      -mc <version>             :  specifies the minecraft version
+      --server                  :  installs mod / modpack as server
+      --version                 :  displays the current version
+    
     Commands:
-        install (<slug> | <id> | <name>):<mod(pack)version>:<modloader>
-            installs a mod / modpack
-
-        search <query>
-            searches for modrinth/curseforge projects
-
-        list installs
-            lists all installed modpacks
-        list mods <search>
-            lists all custom mods in installation
-            that fit the search term (either slug or id)
-
-        remove installation <search>
-            removes an installation that fits the search term (either slug or id)
-            --path can also be used as a filter
-        remove mod <installation> <mod>
-            removes a mod from an installation
-            both <installation> and <mod> are search terms (either slug or id)
-            --path can also be used as a filter
+      install <slug | id | name>:<mod(pack)version>:<modloader>
+        installs a mod / modpack
+    
+      search <query>
+        searches for modrinth/curseforge projects
+    
+      list installs
+        lists all installed modpacks
+      list mods <search>
+        lists all custom mods in installation
+        that fit the search term (either slug or id)
+    
+      remove installation <search>
+        removes an installation that fits the search term (either slug or id)
+        --path can also be used as a filter
+      remove mod <installation> <mod>
+        removes a mod from an installation
+        both <installation> and <mod> are search terms (either slug or id)
+        --path can also be used as a filter
 
     Examples:
-        mc-get install sodium:0.6.6:fabric
-        mc-get -mc 1.19.3 install fabulously-optimized
-        mc-get install fabulously-optimized
-        mc-get -s install fabulously-optimized
-        mc-get Fabulously.Optimized-4.10.5.mrpack
-        mc-get list mods
-        mc-get list mods fabulously-optimized
-        mc-get remove installation 123
-        mc-get remove installation fabulously-optimized
-        mc-get remove mod fabulously-optimized sodium
+      mc-get install sodium:0.6.6:fabric
+      mc-get -mc 1.19.3 install fabulously-optimized
+      mc-get install fabulously-optimized
+      mc-get -s install fabulously-optimized
+      mc-get Fabulously.Optimized-4.10.5.mrpack
+      mc-get list mods
+      mc-get list mods fabulously-optimized
+      mc-get remove installation 123
+      mc-get remove installation fabulously-optimized
+      mc-get remove mod fabulously-optimized sodium
 
 ## OS Compatibility
 
