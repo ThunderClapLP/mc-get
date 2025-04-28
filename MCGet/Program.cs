@@ -74,8 +74,9 @@ Usage:
 Flags:
     -h / --help         :  displays this help page
     -s / --silent       :  performs a silent install. No user input needed
-    -mr / --modrinth    :  download from modrinth
-    -cf / --curseforge  :  download from curseforge
+    -p / --platform <platform> :  installs from specified platform
+                    <mr | modrinth>   :  download from modrinth
+                    <cf | curseforge> :  download from curseforge
     -m <path>           :  specifies minecraft installation path
     --path <path>       :  specifies the target installation path
                            can also be used as a filter in other commands
@@ -139,13 +140,23 @@ Examples:
                             i++;
                         }
                         break;
-                    case "-mr":
-                    case "--modrinth":
-                        cModrinth = true;
-                        break;
-                    case "-cf":
-                    case "--curseforge":
-                        cCurseForge = true;
+                    case "-p":
+                    case "--platform":
+                        if (i < args.Length - 1)
+                        {
+                            if (args[i + 1] == "cf" || args[i + 1].ToLower() == "curseforge")
+                                cCurseForge = true;
+                            else if (args[i + 1] == "mr" || args[i + 1].ToLower() == "modrinth")
+                                cModrinth = true;
+                        }
+                        if (!cCurseForge && !cModrinth)
+                        {
+                            invalidArgs = true;
+                            invalidArgsSuggestion = new string[] { args[i] + " mr", args[i] + " modrinth", args[i] + " cf", args[i] + " curseforge" };
+                            CTools.WriteError("No valid platform specified. Expected curseforge or modrinth after " + args[i], 1);
+                            i = args.Length; //exit the loop. break won't work because of the switch case
+                        }
+                        i++;
                         break;
                     case "--server":
                         cServer = true;
