@@ -2,15 +2,19 @@ _mc-get()
 {
   local cur prev words cword
   _init_completion || return
-  opts="--help -s --silent -mr --modrinth -cf --curseforge -m --path -mc --server -v --version"
+  opts="--help -p --platform -s --silent -m --mc-path --path --mc-version --server --version"
   commands="install search list remove"
   
   case "$prev" in
     --help | --version | -v)
     return
     ;;
-    --path | -m)
+    --path | -m | --mc-path)
     COMPREPLY=( $(compgen -d -- ${cur}) )
+    return
+    ;;
+    -p | --platform)
+    COMPREPLY=( $(compgen -W "mr cf modrinth curseforge" -- ${cur}) )
     return
     ;;
     list)
