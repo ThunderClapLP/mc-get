@@ -76,10 +76,10 @@ Flags:
   -s, --silent              :  performs a silent install. No user input needed
   -p, --platform <platform> :  installs from specified platform
                                either modrinth (mr) or curseforge (cf)
-  -m <path>                 :  specifies minecraft installation path
+  -m, --mc-path <path>      :  specifies minecraft installation path
   --path <path>             :  specifies the target installation path
                                can also be used as a filter in other commands
-  -mc <version>             :  specifies the minecraft version
+  --mc-version <version>    :  specifies the minecraft version
   --server                  :  installs mod / modpack as server
   --version                 :  displays the current version
 
@@ -106,7 +106,7 @@ Commands:
 
 Examples:
   {ExecutableName} install sodium:0.6.6:fabric
-  {ExecutableName} -mc 1.19.3 install fabulously-optimized
+  {ExecutableName} --mc-version 1.19.3 install fabulously-optimized
   {ExecutableName} install fabulously-optimized
   {ExecutableName} -s install fabulously-optimized
   {ExecutableName} Fabulously.Optimized-4.10.5.mrpack
@@ -119,6 +119,7 @@ Examples:
                         Environment.Exit(0);
                         break;
                     case "-m":
+                    case "--mc-path":
                         if (i < args.Length - 1)
                         {
                             insManager.currInstallation.minecraftDir = args[i + 1];
@@ -132,7 +133,7 @@ Examples:
                             i++;
                         }
                         break;
-                    case "-mc":
+                    case "--mc-version":
                         if (i < args.Length - 1)
                         {
                             cMCVersion = args[i + 1];

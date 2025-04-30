@@ -25,10 +25,10 @@ Supports downloading from the two major modding platforms [Modrinth](https://mod
       -s, --silent              :  performs a silent install. No user input needed
       -p, --platform <platform> :  installs from specified platform
                                    either modrinth (mr) or curseforge (cf)
-      -m <path>                 :  specifies minecraft installation path
+      -m, --mc-path <path>      :  specifies minecraft installation path
       --path <path>             :  specifies the target installation path
                                    can also be used as a filter in other commands
-      -mc <version>             :  specifies the minecraft version
+      --mc-version <version>    :  specifies the minecraft version
       --server                  :  installs mod / modpack as server
       --version                 :  displays the current version
     
@@ -55,7 +55,7 @@ Supports downloading from the two major modding platforms [Modrinth](https://mod
 
     Examples:
       mc-get install sodium:0.6.6:fabric
-      mc-get -mc 1.19.3 install fabulously-optimized
+      mc-get --mc-version 1.19.3 install fabulously-optimized
       mc-get install fabulously-optimized
       mc-get -s install fabulously-optimized
       mc-get Fabulously.Optimized-4.10.5.mrpack
