@@ -1,10 +1,10 @@
-dotnet publish -c Release -f net8.0 -r linux-x64 -t:CreateDeb,Clean -p:PublishTrimmed=true -p:PublishSingleFile=true -p:CompletionPackage=true
+dotnet publish -c Release -f net8.0 -r linux-x64 -t:CreateDeb,Clean -p:PublishTrimmed=true -p:PublishSingleFile=true -p:CompletionPackage=true -p:CompletionDeb=true
 dotnet publish -c Release -f net8.0 -r linux-x64 -t:CreateTarball,Clean -p:PublishTrimmed=true -p:PublishSingleFile=true -p:CompletionTarball=true
 dotnet publish -c Release -f net8.0 -r linux-x64 -t:CreateRpm,Clean -p:PublishTrimmed=true -p:PublishSingleFile=true -p:CompletionPackage=true
-dotnet publish -c Release -f net8.0 -r linux-arm -t:CreateDeb,Clean -p:PublishTrimmed=true -p:PublishSingleFile=true -p:CompletionPackage=true
+dotnet publish -c Release -f net8.0 -r linux-arm -t:CreateDeb,Clean -p:PublishTrimmed=true -p:PublishSingleFile=true -p:CompletionPackage=true -p:CompletionDeb=true
 dotnet publish -c Release -f net8.0 -r linux-arm -t:CreateTarball,Clean -p:PublishTrimmed=true -p:PublishSingleFile=true -p:CompletionTarball=true
 dotnet publish -c Release -f net8.0 -r linux-arm -t:CreateRpm,Clean -p:PublishTrimmed=true -p:PublishSingleFile=true -p:CompletionPackage=true
-dotnet publish -c Release -f net8.0 -r linux-arm64 -t:CreateDeb,Clean -p:PublishTrimmed=true -p:PublishSingleFile=true -p:CompletionPackage=true
+dotnet publish -c Release -f net8.0 -r linux-arm64 -t:CreateDeb,Clean -p:PublishTrimmed=true -p:PublishSingleFile=true -p:CompletionPackage=true -p:CompletionDeb=true
 dotnet publish -c Release -f net8.0 -r linux-arm64 -t:CreateTarball,Clean -p:PublishTrimmed=true -p:PublishSingleFile=true -p:CompletionTarball=true
 dotnet publish -c Release -f net8.0 -r linux-arm64 -t:CreateRpm,Clean -p:PublishTrimmed=true -p:PublishSingleFile=true -p:CompletionPackage=true
 

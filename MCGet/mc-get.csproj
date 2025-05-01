@@ -27,10 +27,25 @@
         <LinuxPath>/usr/share/bash-completion/completions/mc-get</LinuxPath>
     </Content>
   </ItemGroup>
+  <ItemGroup Condition="'$(CompletionPackage)' == 'true' and '$(CompletionDeb)' == 'true'">
+    <Content Include="package_files/shell_completion/zsh_completion.zsh" CopyToPublishDirectory="PreserveNewest" LinuxFileMode="1755">
+        <LinuxPath>/usr/share/zsh/vendor-completions/_mc-get</LinuxPath>
+    </Content>
+  </ItemGroup>
+  <ItemGroup Condition="'$(CompletionPackage)' == 'true' and '$(CompletionDeb)' != 'true'">
+    <Content Include="package_files/shell_completion/zsh_completion.zsh" CopyToPublishDirectory="PreserveNewest" LinuxFileMode="1755">
+        <LinuxPath>/usr/share/zsh/site-functions/_mc-get</LinuxPath>
+    </Content>
+  </ItemGroup>
 
   <ItemGroup Condition="'$(CompletionTarball)' == 'true'">
     <Content Include="package_files/shell_completion/bash_completion.sh" CopyToPublishDirectory="PreserveNewest" LinuxFileMode="1755">
       <LinuxPath>/bash_completion.sh</LinuxPath>
+    </Content>
+  </ItemGroup>
+  <ItemGroup Condition="'$(CompletionTarball)' == 'true'">
+    <Content Include="package_files/shell_completion/zsh_completion.zsh" CopyToPublishDirectory="PreserveNewest" LinuxFileMode="1755">
+      <LinuxPath>/zsh_completion.zsh</LinuxPath>
     </Content>
   </ItemGroup>
 </Project>
