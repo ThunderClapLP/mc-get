@@ -264,7 +264,7 @@ Examples:
 
 
             //prepare
-            if (command != COMMANDS.SEARCH && command != COMMANDS.LIST) //skip on search
+            if (command != COMMANDS.SEARCH && command != COMMANDS.LIST && command != COMMANDS.REMOVE) //skip on search
                 Prepare();
 
             Spinner spinner = new Spinner(CTools.CursorTop);
