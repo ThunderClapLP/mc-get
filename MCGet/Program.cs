@@ -53,6 +53,13 @@ namespace MCGet
                 Console.OutputEncoding = System.Text.Encoding.UTF8; //try to set output encoding to UTF8
             } catch (Exception) {}
 
+            dir = AppContext.BaseDirectory ?? System.IO.Directory.GetCurrentDirectory();
+            if (System.OperatingSystem.IsLinux() || System.OperatingSystem.IsMacOS())
+            {
+                dir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/." + Assembly.GetExecutingAssembly().GetName().Name;
+            }
+            //dir = System.IO.Directory.GetCurrentDirectory();
+
             bool invalidArgs = true;
             string[] invalidArgsSuggestion = new string[] { "<archivepath>", "install <slug>" };
             for (int i = 0; i < args.Length; i++)
@@ -81,6 +88,7 @@ Flags:
                                can also be used as a filter in other commands
   --mc-version <version>    :  specifies the minecraft version
   --server                  :  installs mod / modpack as server
+  --set <name>=<value>      :  sets a setting to the specified value
   --version                 :  displays the current version
 
 Commands:
@@ -161,6 +169,45 @@ Examples:
                     case "--server":
                         cServer = true;
                         insManager.currInstallation.isServer = true;
+                        break;
+                    case "--set":
+                        {
+                            invalidArgs = true;
+                            if (i < args.Length - 1)
+                            {
+                                int splitIndex = args[i + 1].IndexOf('=');
+                                if (splitIndex > 0 && splitIndex < args[i + 1].Length - 1) //splitIndex exists and is not the first or last char
+                                {
+                                    insManager.LoadOrCreate(dir);
+                                    string settingName = args[i + 1].Substring(0, splitIndex);
+                                    string settingValue = args[i + 1].Substring(splitIndex + 1);
+                                    CTools.WriteError("Setting \"" + settingName + "\" to \"" + settingValue + "\"", 0);
+                                    invalidArgs = false;
+                                    switch (settingName)
+                                    {
+                                        case "minecraftPath":
+                                            if (Directory.Exists(settingValue))
+                                                insManager.installations.settings.minecraftPath = settingValue;
+                                            else
+                                                CTools.WriteError("Directory \"" + settingValue + "\" does not exist", 1);
+                                            break;
+                                        case "defaultInstallationPath":
+                                            insManager.installations.settings.defaultInstallationPath = settingValue;
+                                            break;
+                                        default:
+                                            CTools.WriteError("Setting with the name \"" + settingName + "\" deos not exist.", 1);
+                                            break;
+                                    }
+                                    insManager.Save();
+                                }
+                            }
+
+                            if (invalidArgs)
+                            {
+                                invalidArgsSuggestion = new string[] { args[i] + " <setting name>=<value>" };
+                                i = args.Length; //exit the loop. break won't work because of the switch case
+                            }
+                        }
                         break;
                     case "-v":
                     case "--version":
@@ -250,13 +297,6 @@ Examples:
                 Environment.Exit(0);
                 return;
             }
-
-            dir = AppContext.BaseDirectory ?? System.IO.Directory.GetCurrentDirectory();
-            if (System.OperatingSystem.IsLinux() || System.OperatingSystem.IsMacOS())
-            {
-                dir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/." + Assembly.GetExecutingAssembly().GetName().Name;
-            }
-            //dir = System.IO.Directory.GetCurrentDirectory();
 
             backup = new Backup(dir + backupDir);
             insManager.LoadOrCreate(dir);
@@ -763,7 +803,12 @@ Examples:
 
                         SetupInstallDir();
                     }
-                    break;
+                    else
+                    {
+                        //do nothing - can happen when called with --set for example
+                        Environment.Exit(0);
+                    }
+                     break;
             }
 
             //not needed anymore?
