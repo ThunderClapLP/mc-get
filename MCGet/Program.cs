@@ -328,7 +328,7 @@ Examples:
 
 
             //prepare
-            if (command != COMMANDS.SEARCH && command != COMMANDS.LIST && command != COMMANDS.REMOVE) //skip on search
+            if (command == COMMANDS.INSTALL || insManager.currInstallation.archivePath != "") //only if we need to install a pack
                 Prepare();
 
             Spinner spinner = new Spinner(CTools.CursorTop);
