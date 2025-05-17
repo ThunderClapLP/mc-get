@@ -125,6 +125,25 @@ namespace MCGet
             installations.settings.minecraftPath = path;
         }
 
+        /// <summary>
+        /// Resets the given setting to its default value
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns>true if setting exists</returns>
+        public bool UnsetSetting(string name)
+        {
+            switch (name)
+            {
+                case "minecraftPath":
+                    installations.settings.minecraftPath = new Settings().minecraftPath;
+                    return true;
+                case "defaultInstallationPath":
+                    installations.settings.defaultInstallationPath = new Settings().defaultInstallationPath;
+                    return true;
+            }
+            return false;
+        }
+
         public static string LocalToGlobalPath(string path)
         {
             if (path.Replace("\\", "/").StartsWith("./"))

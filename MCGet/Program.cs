@@ -89,6 +89,7 @@ Flags:
   --mc-version <version>    :  specifies the minecraft version
   --server                  :  installs mod / modpack as server
   --set <name>=<value>      :  sets a setting to the specified value
+  --unset <name>            :  resets a setting to its default value
   --version                 :  displays the current version
 
 Commands:
@@ -205,6 +206,29 @@ Examples:
                             if (invalidArgs)
                             {
                                 invalidArgsSuggestion = new string[] { args[i] + " <setting name>=<value>" };
+                                i = args.Length; //exit the loop. break won't work because of the switch case
+                            }
+                        }
+                        break;
+                    case "--unset":
+                        {
+                            invalidArgs = true;
+                            if (i < args.Length - 1)
+                            {
+                                invalidArgs = false;
+                                insManager.LoadOrCreate(dir);
+
+                                if (insManager.UnsetSetting(args[i + 1]))
+                                    CTools.WriteError("Resetting \"" + args[i + 1] + "\"", 0);
+                                else
+                                    CTools.WriteError("Setting with the name \"" + args[i + 1] + "\" deos not exist.", 1);
+
+                                insManager.Save();
+                            }
+
+                            if (invalidArgs)
+                            {
+                                invalidArgsSuggestion = new string[] { args[i] + " <setting name>" };
                                 i = args.Length; //exit the loop. break won't work because of the switch case
                             }
                         }
