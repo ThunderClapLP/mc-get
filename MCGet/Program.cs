@@ -182,22 +182,17 @@ Examples:
                                     insManager.LoadOrCreate(dir);
                                     string settingName = args[i + 1].Substring(0, splitIndex);
                                     string settingValue = args[i + 1].Substring(splitIndex + 1);
-                                    CTools.WriteError("Setting \"" + settingName + "\" to \"" + settingValue + "\"", 0);
                                     invalidArgs = false;
-                                    switch (settingName)
+                                    try
                                     {
-                                        case "minecraftPath":
-                                            if (Directory.Exists(settingValue))
-                                                insManager.installations.settings.minecraftPath = settingValue;
-                                            else
-                                                CTools.WriteError("Directory \"" + settingValue + "\" does not exist", 1);
-                                            break;
-                                        case "defaultInstallationPath":
-                                            insManager.installations.settings.defaultInstallationPath = settingValue;
-                                            break;
-                                        default:
+                                        if (insManager.SetSetting(settingName, settingValue))
+                                            CTools.WriteError("Setting \"" + settingName + "\" to \"" + settingValue + "\"", 0);
+                                        else
                                             CTools.WriteError("Setting with the name \"" + settingName + "\" deos not exist.", 1);
-                                            break;
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        CTools.WriteError(e.Message, 1);
                                     }
                                     insManager.Save();
                                 }

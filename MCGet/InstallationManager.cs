@@ -126,6 +126,30 @@ namespace MCGet
         }
 
         /// <summary>
+        /// Sets the given setting to a value
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="value"></param>
+        /// <returns>true if setting exists</returns>
+        /// <exception cref="DirectoryNotFoundException"></exception>
+        public bool SetSetting(string name, string value)
+        {
+            switch (name)
+            {
+                case "minecraftPath":
+                    if (Directory.Exists(value))
+                        installations.settings.minecraftPath = value;
+                    else
+                        throw new DirectoryNotFoundException("Directory \"" + value + "\" does not exist");
+                    return true;
+                case "defaultInstallationPath":
+                    installations.settings.defaultInstallationPath = value;
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>
         /// Resets the given setting to its default value
         /// </summary>
         /// <param name="name"></param>
