@@ -30,6 +30,8 @@ Supports downloading from the two major modding platforms [Modrinth](https://mod
                                    can also be used as a filter in other commands
       --mc-version <version>    :  specifies the minecraft version
       --server                  :  installs mod / modpack as server
+      --set <name>=<value>      :  sets a setting to the specified value
+      --unset <name>            :  resets a setting to its default value
       --version                 :  displays the current version
     
     Commands:
