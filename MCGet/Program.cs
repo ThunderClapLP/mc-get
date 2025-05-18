@@ -320,7 +320,9 @@ Examples:
             backup = new Backup(dir + backupDir);
             insManager.LoadOrCreate(dir);
 
-
+            //load CurseForge settings
+            CurseForge.apiurl = insManager.installations.settings.cfApiUrl;
+            CurseForge.apikey = insManager.installations.settings.cfApiKey ?? CurseForge.apikey;
 
             //prepare
             if (command == COMMANDS.INSTALL || insManager.currInstallation.archivePath != "") //only if we need to install a pack
@@ -1000,6 +1002,20 @@ Examples:
                 CTools.WriteError("Connection to Modrinth failed", 1);
             if (cfResult?.Result.error == GetProjectResult.ErrorCode.ConnectionFailed)
                 CTools.WriteError("Connection to CurseForge failed", 1);
+            else if (cfResult?.Result.error == GetProjectResult.ErrorCode.ConnectionRefused)
+            {
+                CTools.WriteError("Connection to CurseForge refused! Did you set the API up correctly?", 1);
+                CTools.WriteLine("  cfApiUrl=" + insManager.installations.settings.cfApiUrl);
+                if ((insManager.installations.settings.cfApiKey ?? "") == "")
+                {
+                    CTools.WriteLine("  cfApiKey is not set!");
+                    CTools.WriteError("You can set the API key with: " + Assembly.GetExecutingAssembly().GetName().Name + " --set cfApiKey=<your key>", 0);
+                }
+                else
+                {
+                    CTools.WriteLine("  cfApiKey is set!");
+                }
+            }
 
             if (result == null)
             {

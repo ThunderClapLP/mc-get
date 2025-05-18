@@ -28,6 +28,7 @@ namespace MCGet.Platforms
             None = 0,
             NotFound = 1,
             ConnectionFailed = 2,
+            ConnectionRefused = 3,
         }
 
         public bool success = false;

@@ -17,8 +17,15 @@ namespace MCGet.Platforms
 {
     public class CurseForge : Platform
     {
-        static string apiurl = ""; //full api url including all static parts
-        static string cfurl = ""; //url of the CurseForge website
+        public static string apiurl = ""; //full api url including all static parts
+        public static string apikey = "";
+        public static string cfurl = "https://www.curseforge.com"; //url of the CurseForge website
+
+        public static void InsertAPIKeyHeader(HttpClient client)
+        {
+            if (apikey != "")
+                client.DefaultRequestHeaders.Add("x-api-key", apikey);
+        }
         public override bool DownloadMods()
         {
             if (cfurl == "" || apiurl == "")
@@ -121,7 +128,7 @@ namespace MCGet.Platforms
             //parse download url
             spinner.msg = "fetching ";
 
-            //try with curseforge api
+            //try with curseforge website
             HttpClient client = new HttpClient(new HttpClientHandler() { AllowAutoRedirect = false });
             client.Timeout = new TimeSpan(0, 0, 10);
             string url = cfurl + "/api/v1/mods/" + projectId + "/files/" + fileId + "/download";
@@ -186,6 +193,7 @@ namespace MCGet.Platforms
                         {
                             //shader or resourcepack
                             client = new HttpClient();
+                            InsertAPIKeyHeader(client);
                             url = apiurl + "/mods/" + projectId;
 
                             Task<String> tsk = client.GetStringAsync(url);
@@ -373,6 +381,7 @@ namespace MCGet.Platforms
         {
             GetProjectResult result = new GetProjectResult(typeof(CurseForge));
             HttpClient client = new HttpClient();
+            InsertAPIKeyHeader(client);
             client.Timeout = TimeSpan.FromSeconds(10);
 
             if (cfurl == "" || apiurl == "")
@@ -400,10 +409,19 @@ namespace MCGet.Platforms
             }
             catch (HttpRequestException e)
             {
-                if (e.StatusCode == System.Net.HttpStatusCode.NotFound)
-                    result.error = GetProjectResult.ErrorCode.NotFound;
-                else
-                    result.error = GetProjectResult.ErrorCode.ConnectionFailed;
+                switch (e.StatusCode)
+                    {
+                    case System.Net.HttpStatusCode.NotFound:
+                        result.error = GetProjectResult.ErrorCode.NotFound;
+                        break;
+                    case System.Net.HttpStatusCode.Forbidden:
+                    case System.Net.HttpStatusCode.Unauthorized:
+                        result.error = GetProjectResult.ErrorCode.ConnectionRefused;
+                        break;
+                    default:
+                        result.error = GetProjectResult.ErrorCode.ConnectionFailed;
+                        break;
+                }
             }
             catch (TaskCanceledException e)
             { result.error = GetProjectResult.ErrorCode.ConnectionFailed; }
@@ -533,7 +551,7 @@ namespace MCGet.Platforms
                 return result;
 
             HttpClient client = new HttpClient();
-            client.DefaultRequestHeaders.UserAgent.ParseAdd(Program.api_user_agent);
+            InsertAPIKeyHeader(client);
 
             Task<string> response = client.GetStringAsync(apiurl + "/mods/search?gameId=432&categoryIds=6,4471&sortField=2&sortOrder=desc&searchFilter=" + HttpUtility.UrlEncode(search));
 

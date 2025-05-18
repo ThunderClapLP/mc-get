@@ -11,7 +11,11 @@ A console application to download and install mods and modpacks for Minecraft or
 ## Modding Platform Support
 
 Supports downloading from the two major modding platforms [Modrinth](https://modrinth.com/) and [CurseForge](https://www.curseforge.com/)!\
-🚧 CurseForge is WIP and not supported in any release yet. In order to test it in main branch, you need to set the urls in [CurseForge.cs](MCGet/Platforms/CurseForge.cs) and add api key handling yourself 🚧
+⚠️ CurseForge needs extra configuration to work. [Click here](https://github.com/ThunderClapLP/mc-get/issues/1) for a more detailed explanation. ⚠️
+
+How to set the CurseForge API key:
+
+    mc-get --set cfApiKey=<your key>
 
 
 ## Usage

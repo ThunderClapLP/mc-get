@@ -20,6 +20,8 @@ namespace MCGet
     {
         public string minecraftPath { get; set; } = "";
         public string defaultInstallationPath { get; set; } = "./installations";
+        public string cfApiUrl { get; set; } = "https://api.curseforge.com/v1"; //full curseforge api url including all static parts
+        public string? cfApiKey { get; set; } //curseforge api key
     }
     public class Installation
     {
@@ -132,6 +134,7 @@ namespace MCGet
         /// <param name="value"></param>
         /// <returns>true if setting exists</returns>
         /// <exception cref="DirectoryNotFoundException"></exception>
+        /// <exception cref="UriFormatException"></exception>
         public bool SetSetting(string name, string value)
         {
             switch (name)
@@ -144,6 +147,18 @@ namespace MCGet
                     return true;
                 case "defaultInstallationPath":
                     installations.settings.defaultInstallationPath = value;
+                    return true;
+                case "cfApiUrl":
+                    {
+                        Uri? uri;
+                        if (Uri.TryCreate(value, UriKind.Absolute, out uri) && (uri?.Scheme == Uri.UriSchemeHttp || uri?.Scheme == Uri.UriSchemeHttps))
+                            installations.settings.cfApiUrl = uri.AbsoluteUri.TrimEnd('/');
+                        else
+                            throw new UriFormatException("\"" + value + "\" is not a valid url");
+                        return true;
+                    }
+                case "cfApiKey":
+                    installations.settings.cfApiKey = value;
                     return true;
             }
             return false;
@@ -163,6 +178,12 @@ namespace MCGet
                     return true;
                 case "defaultInstallationPath":
                     installations.settings.defaultInstallationPath = new Settings().defaultInstallationPath;
+                    return true;
+                case "cfApiUrl":
+                    installations.settings.cfApiUrl = new Settings().cfApiUrl;
+                    return true;
+                case "cfApiKey":
+                    installations.settings.cfApiKey = new Settings().cfApiKey;
                     return true;
             }
             return false;
