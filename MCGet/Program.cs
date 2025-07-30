@@ -713,7 +713,8 @@ Examples:
                             if (commandParams[0] == "installation")
                             {
                                 //remove installation
-                                if (cSilent || CTools.ConfirmDialog("Are you sure to permanently remove installation " + ins.modpackName + " (" + ins.Id + ") from your disk", false))
+                                CTools.WriteError("All saved worlds will be lost!", 1);
+                                if (cSilent || CTools.ConfirmDialog("Are you sure to permanently remove installation \"" + ins.modpackName + "\" (" + ins.Id + ") from your disk?", false))
                                 {
                                     CTools.Write("Removing installation");
                                     try
