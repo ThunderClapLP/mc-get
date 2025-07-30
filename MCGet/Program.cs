@@ -1140,9 +1140,12 @@ Examples:
                 }
                 while (!confirmed)
                 {
-                    if (!Directory.Exists(insManager.currInstallation.minecraftDir) || !Directory.Exists(insManager.currInstallation.minecraftDir + "/versions"))
+                    if (!Directory.Exists(insManager.currInstallation.minecraftDir) || !File.Exists(insManager.currInstallation.minecraftDir + "/launcher_profiles.json"))
                     {
-                        CTools.WriteError("Minecraft directory not found!");
+                        if (insManager.currInstallation.minecraftDir != "")
+                            CTools.WriteError($"\"" + insManager.currInstallation.minecraftDir + "\" is not a valid Minecraft directory!");
+                        else
+                            CTools.WriteError("Minecraft directory not found!");
 
                         if (cSilent)
                             Environment.Exit(0);
