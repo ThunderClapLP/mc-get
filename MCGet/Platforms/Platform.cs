@@ -17,7 +17,16 @@ namespace MCGet.Platforms
 
     public class SearchResult
     {
+
+        public enum ErrorCode
+        {
+            None = 0,
+            ConnectionFailed = 2,
+            ConnectionRefused = 3,
+            Gone = 4,
+        }
         public bool success = false;
+        public ErrorCode error = ErrorCode.None;
         public List<string> results = new List<string>();
     }
 
@@ -29,6 +38,7 @@ namespace MCGet.Platforms
             NotFound = 1,
             ConnectionFailed = 2,
             ConnectionRefused = 3,
+            Gone = 4,
         }
 
         public bool success = false;

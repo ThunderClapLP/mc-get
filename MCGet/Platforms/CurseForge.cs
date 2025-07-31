@@ -559,9 +559,25 @@ namespace MCGet.Platforms
             {
                 await response;
             }
+            catch (HttpRequestException e)
+            {
+                switch (e.StatusCode)
+                {
+                    case System.Net.HttpStatusCode.Forbidden:
+                    case System.Net.HttpStatusCode.Unauthorized:
+                        result.error = SearchResult.ErrorCode.ConnectionRefused;
+                        break;
+                    default:
+                        result.error = SearchResult.ErrorCode.ConnectionFailed;
+                        break;
+                }
+                result.success = false;
+                return result;
+            }
             catch (Exception) //catch network errors
             {
                 result.success = false;
+                result.error = SearchResult.ErrorCode.ConnectionFailed;
                 return result;
             }
 

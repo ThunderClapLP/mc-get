@@ -235,6 +235,8 @@ namespace MCGet.Platforms
             {
                 if (e.StatusCode == System.Net.HttpStatusCode.NotFound)
                     result.error = GetProjectResult.ErrorCode.NotFound;
+                else if (e.StatusCode == System.Net.HttpStatusCode.Gone)
+                    result.error = GetProjectResult.ErrorCode.Gone;
                 else
                     result.error = GetProjectResult.ErrorCode.ConnectionFailed;
             }
@@ -267,6 +269,8 @@ namespace MCGet.Platforms
             {
                 if (e.StatusCode == System.Net.HttpStatusCode.NotFound)
                     result.error = GetProjectResult.ErrorCode.NotFound;
+                else if (e.StatusCode == System.Net.HttpStatusCode.Gone)
+                    result.error = GetProjectResult.ErrorCode.Gone;
                 else
                     result.error = GetProjectResult.ErrorCode.ConnectionFailed;
             }
@@ -379,9 +383,19 @@ namespace MCGet.Platforms
             {
                 await response;
             }
-            catch (Exception) //catch network errors
+            catch (HttpRequestException e) //catch network errors
             {
                 result.success = false;
+                if (e.StatusCode == System.Net.HttpStatusCode.Gone)
+                    result.error = SearchResult.ErrorCode.Gone;
+                else
+                    result.error = SearchResult.ErrorCode.ConnectionFailed;
+                return result;
+            }
+            catch (Exception)
+            {
+                result.success = false;
+                result.error = SearchResult.ErrorCode.ConnectionFailed;
                 return result;
             }
 

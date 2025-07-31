@@ -557,7 +557,7 @@ Examples:
                             }
                             else
                             {
-                                if ((result?.error == GetProjectResult.ErrorCode.NotFound))
+                                if (result?.error == GetProjectResult.ErrorCode.NotFound)
                                     CTools.WriteError("No project with slug or id '" + installName + "' was found" + (installGameVersion != "" ? (" for version " + installGameVersion) : ""));
                                 Environment.Exit(1);
                                 return;
@@ -567,7 +567,7 @@ Examples:
                     break;
                 case COMMANDS.SEARCH:
                     {
-                        CTools.Write("Searching for Projects");
+                        spinner.msg = "Searching for Projects";
                         spinner.StartAnimation();
                         Task<SearchResult> mrResult = Modrinth.SearchForProjects(string.Join(" ", commandParams));
                         Task<SearchResult> cfResult = CurseForge.SearchForProjects(string.Join(" ", commandParams));
@@ -577,11 +577,18 @@ Examples:
                         CTools.ClearLine();
                         if (mrResult.Result.success && mrResult.Result.results.Count > 0)
                         {
-                                CTools.WriteLine("Modrinth projects:");
+                            CTools.WriteLine("Modrinth projects:");
                             mrResult.Result.results.ForEach((s) => CTools.WriteLine(" " + s));
                         }
-                        CTools.Write("Searching for Projects");
+                        else if (mrResult.Result.error == SearchResult.ErrorCode.Gone)
+                            CTools.WriteError("The used Modrinth API version is no longer available! Make sure to use the newest version of this software");
+                        else if (mrResult.Result.error == SearchResult.ErrorCode.ConnectionFailed)
+                            CTools.WriteError("Connection to Modrinth failed!", 1);
+
+                        //CTools.Write("Searching for Projects");
                         spinner.top = CTools.CursorTop;
+                        spinner.msg = ""; //force printmsg
+                        spinner.msg = "Searching for Projects";
                         spinner.StartAnimation();
                         cfResult.Wait();
                         spinner.StopAnimation();
@@ -592,8 +599,31 @@ Examples:
                             CTools.WriteLine("CurseForge projects:");
                             cfResult.Result.results.ForEach((s) => CTools.WriteLine(" " + s));
                         }
+                        else if (cfResult.Result.error == SearchResult.ErrorCode.ConnectionFailed)
+                            CTools.WriteError("Connection to CurseForge failed!", 1);
+                        else if (cfResult.Result.error == SearchResult.ErrorCode.ConnectionRefused)
+                        {
+                            CTools.WriteError("Connection to CurseForge refused! Did you set the API up correctly?", 1);
+                            CTools.WriteLine("  cfApiUrl=" + insManager.installations.settings.cfApiUrl);
+                            if ((insManager.installations.settings.cfApiKey ?? "") == "")
+                            {
+                                CTools.WriteLine("  cfApiKey is not set!");
+                                CTools.WriteError("You can set the API key with: " + Assembly.GetExecutingAssembly().GetName().Name + " --set cfApiKey=<your key>", 0);
+                            }
+                            else
+                            {
+                                CTools.WriteLine("  cfApiKey is set!");
+                            }
+                        }
+
                         if (!mrResult.Result.success && !cfResult.Result.success)
-                            CTools.WriteResult(false);
+                        {
+                            spinner.top = CTools.CursorTop;
+                            spinner.msg = ""; //force printmsg
+                            spinner.msg = "Searching for Projects";
+                            spinner.Update(true);
+                            CTools.WriteResult(false, spinner);
+                        }
 
                         if (mrResult.Result.results.Count == 0 && cfResult.Result.results.Count == 0)
                             CTools.WriteLine("No projects found!");
@@ -1020,6 +1050,8 @@ Examples:
 
             if (mrResult?.Result.error == GetProjectResult.ErrorCode.ConnectionFailed)
                 CTools.WriteError("Connection to Modrinth failed", 1);
+            else if (mrResult?.Result.error == GetProjectResult.ErrorCode.Gone)
+                CTools.WriteError("The used Modrinth API version is no longer available! Make sure to use the newest version of this software");
             if (cfResult?.Result.error == GetProjectResult.ErrorCode.ConnectionFailed)
                 CTools.WriteError("Connection to CurseForge failed", 1);
             else if (cfResult?.Result.error == GetProjectResult.ErrorCode.ConnectionRefused)
