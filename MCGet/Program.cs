@@ -430,7 +430,7 @@ Examples:
                                         modifyExisting = true;
                                         if (existingInstallations.Count == 1)
                                         {
-                                            insManager.currInstallation = existingInstallations[0];
+                                            ins = existingInstallations[0];
                                         }
                                         else
                                         {
