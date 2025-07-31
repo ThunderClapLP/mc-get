@@ -106,7 +106,7 @@ namespace ConsoleTools
         {
             lock(ConsoleLock) Console.Write(format, list);
         }
-        //TODO: add optional spinner attribute to draw the result at spinner pos and write it's msg if not in terminal mode
+ 
         public static void WriteResult(bool success, Spinner? spinner = null)
         {
             lock(ConsoleLock)
