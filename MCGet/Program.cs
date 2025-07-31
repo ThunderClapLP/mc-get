@@ -929,8 +929,11 @@ Examples:
             CTools.Write("Cleaning up");
             try
             {
+                bool backup_clean_success = backup.Clean();
                 if (Directory.Exists(dir + tempDir))
                     System.IO.Directory.Delete(dir + tempDir, true);
+                if (!backup_clean_success)
+                    throw new Exception();
             }
             catch (Exception)
             {
@@ -1407,7 +1410,7 @@ Examples:
 
         static void BackupModsFolder()
         {
-            string modsDir = Path.GetFullPath(insManager.currInstallation.installationDir + "/mods");
+            string modsDir = InstallationManager.LocalToGlobalPath(insManager.currInstallation.installationDir + "/mods");
             if (Directory.Exists(modsDir) || File.Exists(modsDir))
             {
                 if (Directory.GetDirectories(modsDir).Length > 0 || Directory.GetFiles(modsDir).Length > 0)
@@ -1435,17 +1438,17 @@ Examples:
                         CTools.WriteResult(true, spinner);
                     }
 
-                    //TODO: decide what to do here. Force to delete?
                     CTools.WriteError("Mods directory is not empty.", 1);
                     try
                     {
-                        if (CTools.ConfirmDialog("Delete ALL existing mods?", true))
+                        if (CTools.ConfirmDialog("Delete ALL existing mods? (custom mods will be lost)", true))
                         {
                             if (Directory.Exists(modsDir))
                                 Directory.Delete(modsDir, true);
                             if (File.Exists(modsDir))
                                 File.Delete(modsDir);
-
+                            //TODO: Properly delete all files from the mod. not only in the mods folder
+                            insManager.currInstallation.customMods = insManager.currInstallation.customMods.FindAll((e) => !e.files.Any((f) => f.StartsWith("/mods/")));
                         }
                     }
                     catch (Exception)
