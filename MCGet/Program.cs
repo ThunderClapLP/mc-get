@@ -30,7 +30,7 @@ namespace MCGet
         public static string backupDir = "/backup/";
         public static string archiveDir = "/archives/";
         public static bool modifyExisting = false;
-        public static string api_user_agent = "mc-get/" + (Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.1") + " (ThunderClapLP/mc-get)";
+        public static string api_user_agent = "";
         public static Backup backup = new Backup("");
         public static InstallationManager insManager = new InstallationManager();
 
@@ -47,11 +47,20 @@ namespace MCGet
         public static string extractedName = "";
         static void Main(string[] args)
         {
+            {
+                string? informationalVersion = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+                //cut commit hash
+                informationalVersion = (informationalVersion?.Contains('+') ?? false) ? informationalVersion?.Substring(0, Math.Min(informationalVersion.IndexOf('+') + 8, informationalVersion.Length)) : informationalVersion;
+                //only use informational version in dev builds
+                informationalVersion = (informationalVersion?.Contains('-') ?? false) ? informationalVersion : null;
+                api_user_agent = "mc-get/" + (informationalVersion ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.1") + " (ThunderClapLP/mc-get)";
+            }
             CTools.ValidateConsole();
             try
             {
                 Console.OutputEncoding = System.Text.Encoding.UTF8; //try to set output encoding to UTF8
-            } catch (Exception) {}
+            }
+            catch (Exception) { }
 
             dir = AppContext.BaseDirectory ?? System.IO.Directory.GetCurrentDirectory();
             if (System.OperatingSystem.IsLinux() || System.OperatingSystem.IsMacOS())
@@ -230,11 +239,18 @@ Examples:
                         break;
                     case "-v":
                     case "--version":
-                        CTools.WriteLine(Assembly.GetExecutingAssembly().GetName().Name + " Version " + Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "unknown");
-                        //TODO: remove -v in 0.5
-                        if (args[i] == "-v")
-                            CTools.WriteError("Deprecated! Use --version instead. -v will be removed in a future version.", 1);
-                        Environment.Exit(0);
+                        {
+                            string? informationalVersion = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+                            //cut commit hash
+                            informationalVersion = (informationalVersion?.Contains('+') ?? false) ? informationalVersion?.Substring(0, Math.Min(informationalVersion.IndexOf('+') + 8, informationalVersion.Length)) : informationalVersion;
+                            //only use informational version in dev builds
+                            informationalVersion = (informationalVersion?.Contains('-') ?? false) ? informationalVersion : null;
+                            CTools.WriteLine(Assembly.GetExecutingAssembly().GetName().Name + " Version " + (informationalVersion ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "unknown"));
+                            //TODO: remove -v in 0.5
+                            if (args[i] == "-v")
+                                CTools.WriteError("Deprecated! Use --version instead. -v will be removed in a future version.", 1);
+                            Environment.Exit(0);
+                        }
                         break;
                     case "install":
                         if (i < args.Length - 1)
