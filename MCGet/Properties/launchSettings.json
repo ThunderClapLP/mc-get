@@ -2,7 +2,12 @@
   "profiles": {
     "MCGet": {
       "commandName": "Project",
-      "commandLineArgs": "install fabulously-optimized:1.19.2 craftify:fabric simple-voice-chat:fabric sodium:1.19.2 "
+      "commandLineArgs": "install cobblemon-fabric"
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "commandLineArgs": "\"{OutDir}/mc-get.dll\" --server --silent -m \"./COBBLEMON\" install \"cobblemon-fabric\"",
+      "distributionName": ""
     }
   }
 }
