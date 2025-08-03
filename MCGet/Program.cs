@@ -987,6 +987,16 @@ Examples:
             }
             CTools.WriteResult(true);
 
+            {
+                ProfileHandler ph = new ProfileHandler();
+                string profilePath = insManager.currInstallation.minecraftDir;
+                if (profilePath != "")
+                    ph.LoadProfiles(profilePath + "/launcher_profiles.json");
+                string? profileName = ph.GetProfileName(insManager.currInstallation.modloaderProfile ?? "");
+                if (profileName != null)
+                    CTools.WriteError("MC profile name: " + profileName, 0);
+            }
+
             CTools.WriteLine();
             CTools.Write("Installation successful!");
             if (OperatingSystem.IsWindows())
