@@ -3,7 +3,7 @@
 A console application to download and install mods and modpacks for Minecraft or a Minecraft server
 
 > [!NOTE]
-> This readme is for the development version, it may differ from the latest release. You can view the readme for the latest release [here](../v0.3.1/readme.md).
+> This readme is for the development version, it may differ from the latest release. You can view the readme for the latest release [here](../release-0.4.x/readme.md).
 
 > [!NOTE]
 > Breaking change from 0.3.x: mc-get no longer installs modpacks in the .minecraft folder directly! It now supports managing multiple concurrent Minecraft installations.
@@ -73,9 +73,9 @@ How to set the CurseForge API key:
 
 ## OS Compatibility
 
- - Windows: Working (last tested: v0.3.1)
- - Linux: Working (last tested: v0.3.0)
- - MacOS: Working (last tested: v0.2.2)
+ - Windows: Working (last tested: v0.4.0)
+ - Linux: Working (last tested: v0.4.0)
+ - MacOS: Working (last tested: v0.4.0 dev build)
 
 ## Supported Modloaders
 
