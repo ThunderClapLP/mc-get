@@ -3,9 +3,6 @@
 A console application to download and install mods and modpacks for Minecraft or a Minecraft server
 
 > [!NOTE]
-> This readme is for the development version, it may differ from the latest release. You can view the readme for the latest release [here](../v0.3.1/readme.md).
-
-> [!NOTE]
 > Breaking change from 0.3.x: mc-get no longer installs modpacks in the .minecraft folder directly! It now supports managing multiple concurrent Minecraft installations.
 
 ## Modding Platform Support
