@@ -236,7 +236,6 @@ Examples:
                             }
                         }
                         break;
-                    case "-v":
                     case "--version":
                         {
                             string? informationalVersion = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
@@ -245,9 +244,6 @@ Examples:
                             //only use informational version in dev builds
                             informationalVersion = (informationalVersion?.Contains('-') ?? false) ? informationalVersion : null;
                             CTools.WriteLine(Assembly.GetExecutingAssembly().GetName().Name + " Version " + (informationalVersion ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "unknown"));
-                            //TODO: remove -v in 0.5
-                            if (args[i] == "-v")
-                                CTools.WriteError("Deprecated! Use --version instead. -v will be removed in a future version.", 1);
                             Environment.Exit(0);
                         }
                         break;

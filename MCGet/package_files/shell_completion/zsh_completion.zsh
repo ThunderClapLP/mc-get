@@ -11,7 +11,7 @@ _mc-get() {
   prev=${words[CURRENT-1]}
 
   case "$prev" in
-    --help | --version | -v)
+    --help | --version)
       return
       ;;
     --path | -m | --mc-path)

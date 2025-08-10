@@ -6,7 +6,7 @@ _mc-get()
   commands="install search list remove"
   
   case "$prev" in
-    --help | --version | -v)
+    --help | --version)
     return
     ;;
     --path | -m | --mc-path)
