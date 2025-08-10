@@ -52,8 +52,8 @@ namespace MCGet.ModLoaders
                 //forge.StartInfo.RedirectStandardOutput = true;
                 //forge.StartInfo.RedirectStandardError = true;
                 //forge.StartInfo.RedirectStandardInput = true;
-                //Task<String> logTask = forge.StandardOutput.ReadToEndAsync(); //read the output because forge and neoforge block otherwise
-                //Task<String> errorLogTask = forge.StandardError.ReadToEndAsync();
+                //Task<string> logTask = forge.StandardOutput.ReadToEndAsync(); //read the output because forge and neoforge block otherwise
+                //Task<string> errorLogTask = forge.StandardError.ReadToEndAsync();
                 forge.Start();
 
                 CTools.Write("Please follow the instructions of the forge Installer");

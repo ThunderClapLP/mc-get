@@ -29,9 +29,8 @@ namespace MCGet
             {
                 streamTask.Wait();
             }
-            catch (System.AggregateException e)
+            catch (AggregateException)
             {
-                //CTools.WriteLine(e.Message);
                 spinner?.StopAnimation();
                 return false;
             }
@@ -55,7 +54,7 @@ namespace MCGet
             {
                 copyTask.Wait();
             }
-            catch (System.AggregateException)
+            catch (AggregateException)
             {
                 return false;
                 //TODO: handle disk full seperatly (Abort all downloads). Maybe an enum as return type

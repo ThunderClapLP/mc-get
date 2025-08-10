@@ -124,7 +124,6 @@ namespace MCGet.Platforms
             spinner.top = CTools.CursorTop;
 
             //parse download url
-            //CTools.ClearLine();
             spinner.msg = "Downloading " + Path.GetFileName(destinationPath);
 
             if (url == "" || !Networking.DownloadFile(url, destinationPath, spinner))
@@ -207,7 +206,7 @@ namespace MCGet.Platforms
                 else
                     result.error = GetProjectResult.ErrorCode.ConnectionFailed;
             }
-            catch (TaskCanceledException e)
+            catch (TaskCanceledException)
                 { result.error = GetProjectResult.ErrorCode.ConnectionFailed; }
 
             if (!getTask.IsCompletedSuccessfully || getTask.IsFaulted)
@@ -241,7 +240,7 @@ namespace MCGet.Platforms
                 else
                     result.error = GetProjectResult.ErrorCode.ConnectionFailed;
             }
-            catch (TaskCanceledException e)
+            catch (TaskCanceledException)
                 { result.error = GetProjectResult.ErrorCode.ConnectionFailed; }
 
             if (!getTask.IsCompletedSuccessfully || getTask.IsFaulted)
@@ -298,7 +297,6 @@ namespace MCGet.Platforms
                     {
                         if (dep.GetProperty("dependency_type").ToString() == "required" && dep.GetProperty("version_id").ToString() != "")
                         {
-                            //Console.WriteLine(dep.ToString());
                             result.urls.Add(await GetProjectFromVersion(dep.GetProperty("version_id").ToString()));
                         }
                     }

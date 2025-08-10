@@ -283,7 +283,7 @@ namespace ConsoleTools
                 while (!valid)
                 {
                     Console.Write(prompt + ": ");
-                    String input = Console.ReadLine() ?? "";
+                    string input = Console.ReadLine() ?? "";
 
                     if (int.TryParse(input, out ret) && ret - 1 < list.Count() && ret - 1 >= 0)
                         valid = true;
@@ -345,7 +345,7 @@ namespace ConsoleTools
                 }
                 (int x, int y) prevCurs = Console.GetCursorPosition();
                 
-                Console.WriteLine(new String(' ', DockRight() - prevCurs.x)); //writeline to have the same behaviour on all console widths
+                Console.WriteLine(new string(' ', DockRight() - prevCurs.x)); //writeline to have the same behaviour on all console widths
                 
                 Console.SetCursorPosition(prevCurs.x, Math.Max(Console.GetCursorPosition().Top - 1, 0)); //don't use prevCury.y to fix an extra line being spawned on linux
             }

@@ -140,7 +140,6 @@ namespace MCGet.Platforms
                 if (res != null)
                 {
                     url = res.Result.Headers.Location?.AbsoluteUri ?? "";
-                    //Console.CursorLeft = 0;
                     string newMessage = "Downloading " + Path.GetFileName(HttpUtility.UrlDecode(Path.GetFileName(url))).Split("?")[0] + " ";
                     if (spinner!.msg != newMessage)
                         spinner!.msg = newMessage;
@@ -155,7 +154,7 @@ namespace MCGet.Platforms
                 {
                     res.Wait();
                 }
-                catch (System.AggregateException) { }
+                catch (AggregateException) { }
                 spinner?.StopAnimation();
 
                 if (res.IsFaulted || res.IsCanceled) //handle cancel gracefully
@@ -176,14 +175,14 @@ namespace MCGet.Platforms
                     {
                         bytes.Wait();
                     }
-                    catch (System.AggregateException) { }
+                    catch (AggregateException) { }
                     spinner?.StopAnimation();
 
                     if (bytes.IsCompleted && !bytes.IsFaulted && !bytes.IsCanceled)
                     {
                         string destFileName = Path.GetFileName(HttpUtility.UrlDecode(Path.GetFileName(url)));
                         //TODO: add to downloadedMods or Files list! seperate between mods, shaders, resourcepacks
-                        string destinationPath = "";
+                        string destinationPath;
                         if (destFileName.ToLower().EndsWith(".jar"))
                         {
                             //mod
@@ -196,7 +195,7 @@ namespace MCGet.Platforms
                             InsertAPIKeyHeader(client);
                             url = apiurl + "/mods/" + projectId;
 
-                            Task<String> tsk = client.GetStringAsync(url);
+                            Task<string> tsk = client.GetStringAsync(url);
 
                             spinner?.Draw();
                             spinner?.StartAnimation();
@@ -204,7 +203,7 @@ namespace MCGet.Platforms
                             {
                                 tsk.Wait();
                             }
-                            catch (System.AggregateException) { }
+                            catch (AggregateException) { }
                             spinner?.StopAnimation();
 
                             if (tsk.IsFaulted)
@@ -238,7 +237,7 @@ namespace MCGet.Platforms
                                         //throw new Exception(); //category not supported
                                 }
                             }
-                            catch (Exception e)
+                            catch (Exception)
                             {
                                 CTools.WriteResult(false, spinner);
                                 return false;
@@ -390,7 +389,7 @@ namespace MCGet.Platforms
                         break;
                 }
             }
-            catch (TaskCanceledException e)
+            catch (TaskCanceledException)
             { result.error = GetProjectResult.ErrorCode.ConnectionFailed; }
 
             if (!getTask.IsCompletedSuccessfully || getTask.IsFaulted)

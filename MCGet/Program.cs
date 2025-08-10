@@ -67,7 +67,6 @@ namespace MCGet
             {
                 dir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/." + Assembly.GetExecutingAssembly().GetName().Name;
             }
-            //dir = System.IO.Directory.GetCurrentDirectory();
 
             bool invalidArgs = true;
             string[] invalidArgsSuggestion = new string[] { "<archivepath>", "install <slug>" };
@@ -585,7 +584,6 @@ Examples:
                         else if (mrResult.Result.error == SearchResult.ErrorCode.ConnectionFailed)
                             CTools.WriteError("Connection to Modrinth failed!", 1);
 
-                        //CTools.Write("Searching for Projects");
                         spinner.top = CTools.CursorTop;
                         spinner.msg = ""; //force printmsg
                         spinner.msg = "Searching for Projects";
@@ -704,7 +702,7 @@ Examples:
                                         CTools.WriteLine("  " + mod.name + " | slug: " + (mod.slug ?? "??") + " Id: " + (mod.projectId ?? "??"));
                                         if (mod.files != null)
                                         {
-                                            foreach (String file in mod.files)
+                                            foreach (string file in mod.files)
                                             {
                                                 CTools.WriteLine("    " + file);
                                             }
@@ -879,9 +877,6 @@ Examples:
                      break;
             }
 
-            //not needed anymore?
-            //RestoreBackup();
-
             CTools.Write("Cleaning up");
             if (backup.Clean())
                 CTools.WriteResult(true);
@@ -890,7 +885,6 @@ Examples:
 
             if (insManager.currInstallation.archivePath != "")
                 CopyArchive();
-            //backup.log.archiveFile = insManager.currInstallation.archivePath;
 
             //extract
             ExtractArchive();
@@ -1235,7 +1229,6 @@ Examples:
                 if (backup.log.minecraftPath + "" != insManager.currInstallation.minecraftDir)
                 {
                     backup.Clean();
-                    //backup = new Backup(backup.path);
                 }
                 backup.SetMinecraftPath(insManager.currInstallation.minecraftDir + "");
             }
@@ -1261,7 +1254,8 @@ Examples:
             }
         }
 
-        //Copy archive to ensure --fix-missing works after the origional archive is deleted or moved by the user.
+        //Copy archive to ensure --fix-missing works after the original archive is deleted or moved by the user.
+        //TODO: decide if this is really needed. --fix-missing does not exist anymore
         static void CopyArchive()
         {
             try
@@ -1298,10 +1292,9 @@ Examples:
                 ZipFile.ExtractToDirectory(insManager.currInstallation.archivePath, dir + tempDir + "archive/");
                 CTools.WriteResult(true, spinner);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 CTools.WriteResult(false, spinner);
-                //Console.WriteLine(e.Message);
                 RevertChanges();
                 return;
             }
@@ -1309,7 +1302,7 @@ Examples:
 
         static bool LoadManifest()
         {
-            string manifestPath = "";
+            string manifestPath;
             if (File.Exists(dir + tempDir + "archive/manifest.json"))
             {
                 manifestPath = dir + tempDir + "archive/manifest.json";
@@ -1327,9 +1320,7 @@ Examples:
 
             try
             {
-                //manifestFile = JsonSerializer.Deserialize<ManifestClasses.ManifestFile>(File.ReadAllText(dir + temp_dir + "archive/manifest.json"));
                 manifestDoc = JsonDocument.Parse(File.ReadAllText(manifestPath));
-
             }
             catch (Exception)
             {
@@ -1593,7 +1584,6 @@ Examples:
                     return;
 
                 Spinner spinner = new Spinner(CTools.CursorTop);
-                //spinner.minSpinnerTime = 150;
                 spinner.top = CTools.CursorTop;
                 CTools.Write("Restoring Backups");
 

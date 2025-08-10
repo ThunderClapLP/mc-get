@@ -60,7 +60,7 @@ namespace MCGet.Platforms
     public abstract class Platform
     {
         public string name = "";
-        protected List<String> downloadedMods = new List<String>();
+        protected List<string> downloadedMods = new List<string>();
         public abstract bool InstallDependencies();
 
         public abstract bool DownloadMods();

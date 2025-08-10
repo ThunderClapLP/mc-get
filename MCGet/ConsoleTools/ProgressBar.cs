@@ -98,12 +98,12 @@ namespace ConsoleTools
 
                 //Console.ForegroundColor = ConsoleColor.DarkGreen;
                 Console.Write("[");
-                Console.Write(new String('=', Math.Max((int)(value / (float)max * (width - 5)) - 1, 0)));
+                Console.Write(new string('=', Math.Max((int)(value / (float)max * (width - 5)) - 1, 0)));
                 if (width - Console.CursorLeft - 5 > 0)
                 {
                     Console.Write(">");
                 }
-                Console.Write(new String(' ', width - Console.CursorLeft - 5));
+                Console.Write(new string(' ', width - Console.CursorLeft - 5));
                 Console.Write("]");
                 //Console.ResetColor();
 

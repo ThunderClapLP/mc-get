@@ -43,13 +43,7 @@ namespace MCGet
         
         public Backup(string path)
         {
-            BackupLog? bl = Load(path);
-
-            if (bl == null)
-            {
-                bl = Create(path);
-            }
-
+            BackupLog? bl = Load(path) ?? Create(path);
             log = bl;
         }
 
@@ -154,9 +148,7 @@ namespace MCGet
                 try
                 {
                     File.Copy(orgPath, path + "/mods/" + Path.GetFileName(orgPath), true);
-                    if (log.installedMods != null)
-                        log.installedMods.Add(new BackupFile(Path.GetFileName(orgPath), overridden, ""));
-
+                    log.installedMods?.Add(new BackupFile(Path.GetFileName(orgPath), overridden, ""));
                 }
                 catch (Exception)
                 {
@@ -165,8 +157,7 @@ namespace MCGet
             }
             else
             {
-                if (log.installedMods != null)
-                    log.installedMods.Add(new BackupFile(Path.GetFileName(orgPath), overridden, ""));
+                log.installedMods?.Add(new BackupFile(Path.GetFileName(orgPath), overridden, ""));
             }
 
             return true;
@@ -184,10 +175,8 @@ namespace MCGet
                         if (!Directory.Exists(Directory.GetParent(newPath)?.FullName))
                             Directory.CreateDirectory(Directory.GetParent(newPath)?.FullName + "");
                         File.Copy(orgPath, newPath, true); ;
-                        if (log.overrides != null)
-                            log.overrides.Add(new BackupFile(orgPath.Substring(log.minecraftPath.Length), overridden, ""));
+                        log.overrides?.Add(new BackupFile(orgPath.Substring(log.minecraftPath.Length), overridden, ""));
                     }
-
                 }
                 catch (Exception)
                 {
@@ -196,8 +185,7 @@ namespace MCGet
             }
             else
             {
-                if (log.overrides != null)
-                    log.overrides.Add(new BackupFile(orgPath, overridden, ""));
+                log.overrides?.Add(new BackupFile(orgPath, overridden, ""));
             }
 
             return true;
@@ -232,9 +220,8 @@ namespace MCGet
 
                         updateProgress?.Invoke(0);
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
-                        //Console.WriteLine(e.Message);
                         failed = true;
                     }
                 }
@@ -257,9 +244,8 @@ namespace MCGet
                         else if (File.Exists(log.minecraftPath + "/" + over.path)) //ignore if doesn't exists
                             File.Delete(log.minecraftPath + "/" + over.path);
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
-                        //Console.WriteLine(e.Message);
                         failed = true;
                     }
 

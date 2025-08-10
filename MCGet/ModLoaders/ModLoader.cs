@@ -12,9 +12,9 @@ namespace MCGet.ModLoaders
     public abstract class ModLoader
     {
         public string javaPath = "";
-        public abstract bool Install(String minecraftVersion, String loaderVersion);
+        public abstract bool Install(string minecraftVersion, string loaderVersion);
 
-        public bool DownloadLoader(String url, Spinner spinner, string fileName = "") {
+        public bool DownloadLoader(string url, Spinner spinner, string fileName = "") {
 
             CTools.CursorLeft = 0;
             CTools.WriteLine("");
@@ -49,7 +49,7 @@ namespace MCGet.ModLoaders
             return true;
         }
 
-        public bool RunLoaderInstaller(Process proc, Spinner spinner, String loaderName) {
+        public bool RunLoaderInstaller(Process proc, Spinner spinner, string loaderName) {
             try
             {
                 //perform the installation
@@ -58,8 +58,8 @@ namespace MCGet.ModLoaders
                 spinner.top = CTools.CursorTop;
                 spinner.msg = "Installing " + loaderName;
 
-                Task<String> logTask = proc.StandardOutput.ReadToEndAsync(); //read the output because forge and neoforge block otherwise
-                Task<String> errorLogTask = proc.StandardError.ReadToEndAsync();
+                Task<string> logTask = proc.StandardOutput.ReadToEndAsync(); //read the output because forge and neoforge block otherwise
+                Task<string> errorLogTask = proc.StandardError.ReadToEndAsync();
                 while (!proc.HasExited) {
                     spinner.Update();
                     proc.WaitForExit(100);
@@ -69,7 +69,6 @@ namespace MCGet.ModLoaders
 
                 if (proc.ExitCode != 0)
                 {
-                    //Console.WriteLine(quilt.StandardOutput.ReadToEnd());
                     CTools.WriteResult(false, spinner);
                     CTools.WriteLine(errorLogTask.Result + proc.StandardError.ReadToEnd());
                     return false;

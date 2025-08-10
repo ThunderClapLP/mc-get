@@ -11,7 +11,7 @@ namespace MCGet
     public class ProfileHandler
     {
         public enum SnapshotNumber {FIRST = 0, SECOND = 1};
-        private List<String>[] Snapshots = {new List<String>(), new List<string>()};
+        private List<string>[] Snapshots = {new List<string>(), new List<string>()};
         private JsonNode? profileJson;
 
         /// <summary>
@@ -32,9 +32,8 @@ namespace MCGet
                     Snapshots[(int)number].Add(profile.Name);
                 }
             }
-            catch (System.Exception e)
+            catch (Exception)
             {
-                //Console.WriteLine(e.Message);
                 return false;
             }
             return true;
@@ -152,7 +151,7 @@ namespace MCGet
 
             if (unique)
             {
-                bool contains = false;
+                bool contains;
                 int count = 0;
                 string name = newName;
                 do

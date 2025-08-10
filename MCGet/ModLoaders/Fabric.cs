@@ -15,7 +15,7 @@ namespace MCGet.ModLoaders
     public class Fabric : ModLoader
     {
         static string url = "https://maven.fabricmc.net/net/fabricmc/fabric-installer/0.11.1/fabric-installer-0.11.1.jar";
-        static string serverUrl = "https://meta.fabricmc.net/v2/versions/loader/{MC_VERSION}/{LOADER_VERSION}/1.0.1/server/jar";
+        //static string serverUrl = "https://meta.fabricmc.net/v2/versions/loader/{MC_VERSION}/{LOADER_VERSION}/1.0.1/server/jar";
         public override bool Install(string minecraftVersion, string loaderVersion)
         {
             if (loaderVersion == "" || minecraftVersion == "")
