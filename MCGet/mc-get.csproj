@@ -9,10 +9,13 @@
     <VersionSuffix>dev</VersionSuffix>
     <InvariantGlobalization>true</InvariantGlobalization>
     <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
-    <TrimMode>partial</TrimMode>
+    <!-- <TrimMode>partial</TrimMode> -->
     <Description>A console application to download and install mods and modpacks for Minecraft or a Minecraft server</Description>
     <PackageMaintainer>ThunderClapLP</PackageMaintainer>
-	  <!-- <UseAppHost>true</UseAppHost> -->
+    <!-- <PublishAot>true</PublishAot> -->
+    <!-- <TargetFramework>net9.0-windows</TargetFramework>-->
+    
+    <!-- <UseAppHost>true</UseAppHost> -->
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Release'">

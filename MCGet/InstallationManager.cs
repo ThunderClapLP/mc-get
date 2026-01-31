@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.IO;
 using ConsoleTools;
 
@@ -14,6 +15,40 @@ namespace MCGet
         public int fileVersion { get; set; } = 1;
         public Settings settings { get; set; } = new Settings();
         public List<Installation> installations { get; set; } = new List<Installation>();
+
+        public void Load(JsonNode element)
+        {
+            fileVersion = (int?)element["fileVersion"] ?? 0;
+            settings = new Settings();
+            settings.Load(element["settings"] ?? new JsonObject());
+            installations.Clear();
+            foreach (JsonNode? installationJson in element["installations"]?.AsArray() ?? new JsonArray())
+            {
+                if (installationJson != null)
+                {
+                    Installation installation = new Installation();
+                    installation.Load(installationJson);
+                    installations.Add(installation);
+                }
+            }
+        }
+
+        public void Save(JsonNode element)
+        {
+            element["fileVersion"] = fileVersion;
+            JsonNode settingsJson = element["settings"] ?? new JsonObject();
+            settings.Save(settingsJson);
+            element["settings"] = settingsJson;
+
+            JsonArray installationsJson = new JsonArray();
+            foreach (Installation installation in installations)
+            {
+                JsonNode installationJson = new JsonObject();
+                installation.Save(installationJson);
+                installationsJson.Add(installationJson);
+            }
+            element["installations"] = installationsJson;
+        }
     }
 
     public class Settings
@@ -22,6 +57,22 @@ namespace MCGet
         public string defaultInstallationPath { get; set; } = "./installations";
         public string cfApiUrl { get; set; } = "https://api.curseforge.com/v1"; //full curseforge api url including all static parts
         public string? cfApiKey { get; set; } //curseforge api key
+
+        public void Load(JsonNode element)
+        {
+            minecraftPath = (string?)element["minecraftPath"] ?? minecraftPath;
+            defaultInstallationPath = (string?)element["defaultInstallationPath"] ?? defaultInstallationPath;
+            cfApiUrl = (string?)element["cfApiUrl"] ?? cfApiUrl;
+            cfApiKey = (string?)element["cfApiKey"];
+        }
+
+        public void Save(JsonNode element)
+        {
+            element["minecraftPath"] = minecraftPath;
+            element["defaultInstallationPath"] = defaultInstallationPath;
+            element["cfApiUrl"] = cfApiUrl;
+            element["cfApiKey"] = cfApiKey;
+        }
     }
     public class Installation
     {
@@ -44,6 +95,59 @@ namespace MCGet
         {
             Id = Random.Shared.Next().ToString();
         }
+
+        public void Load(JsonNode element)
+        {
+            modpackName = (string?)element["modpackName"] ?? modpackName;
+            slug = (string?)element["slug"];
+            modpackVersion = (string?)element["modpackVersion"];
+            mcVersion = (string?)element["mcVersion"];
+            modloader = (string?)element["modloader"];
+            archivePath = (string?)element["archivePath"] ?? archivePath;
+            minecraftDir = (string?)element["minecraftDir"] ?? minecraftDir;
+            installationDir = (string?)element["installationDir"] ?? installationDir;
+            installationDirWasEmpty = (bool?)element["installationDirWasEmpty"] ?? installationDirWasEmpty;
+            Id = (string?)element["Id"];
+            modloaderProfile = (string?)element["modloaderProfile"];
+            isServer = (bool?)element["isServer"] ?? isServer;
+            
+            customMods.Clear();
+            foreach (JsonNode? customModJson in element["customMods"]?.AsArray() ?? new JsonArray())
+            {
+                if (customModJson != null)
+                {
+                    CustomMod customMod = new CustomMod();
+                    customMod.Load(customModJson);
+                    customMods.Add(customMod);
+                }
+            }
+        }
+
+        public void Save(JsonNode element)
+        {
+            element["modpackName"] = modpackName;
+            element["slug"] = slug;
+            element["modpackVersion"] = modpackVersion;
+            element["mcVersion"] = mcVersion;
+            element["modloader"] = modloader;
+            element["archivePath"] = archivePath;
+            element["minecraftDir"] = minecraftDir;
+            element["installationDir"] = installationDir;
+            element["installationDirWasEmpty"] = installationDirWasEmpty;
+            element["Id"] = Id;
+            element["modloaderProfile"] = modloaderProfile;
+            element["isServer"] = isServer;
+
+            JsonArray customModsJson = new JsonArray();
+            foreach (CustomMod customMod in customMods)
+            {
+                JsonNode customModJson = new JsonObject();
+                customMod.Save(customModJson);
+                customModsJson.Add(customModJson);
+                
+            }
+            element["customMods"] = customModsJson;
+        }
     }
 
     public class CustomMod
@@ -52,6 +156,32 @@ namespace MCGet
         public string? slug { get; set; }
         public string? projectId { get; set; }
         public List<string> files { get; set; } = new List<string>();
+
+        public void Load(JsonNode element)
+        {
+            name = (string?)element["name"] ?? name;
+            slug = (string?)element["slug"];
+            projectId = (string?)element["projectId"];
+
+            files.Clear();
+            foreach (JsonNode? fileJson in element["files"]?.AsArray() ?? new JsonArray())
+            {
+                if ((string?)fileJson != null)
+                {
+                    files.Add((string)fileJson!);
+                }
+            }
+        }
+
+        public void Save(JsonNode element)
+        {
+            element["name"] = name;
+            element["slug"] = slug;
+            element["projectId"] = projectId;
+            JsonArray filesJson = new JsonArray();
+            files.ForEach(e => filesJson.Add((JsonNode)e));
+            element["files"] = filesJson;
+        }
     }
 
     public class InstallationManager
@@ -63,6 +193,8 @@ namespace MCGet
 
         public delegate void UpdateProgressDelegate(int progress);
         public event UpdateProgressDelegate? updateProgress;
+
+        private JsonNode jsonRoot = new JsonObject();
 
         public void LoadOrCreate(string path)
         {
@@ -88,7 +220,10 @@ namespace MCGet
 
             try
             {
-                return JsonSerializer.Deserialize<InstallationsJson>(File.ReadAllText(Path.GetFullPath(Path.Join(path, filename))));
+                jsonRoot = JsonNode.Parse(File.ReadAllText(Path.GetFullPath(Path.Join(path, filename)))) ?? new JsonObject();
+                InstallationsJson installationsJson = new InstallationsJson();
+                installationsJson.Load(jsonRoot);
+                return installationsJson;
             }
             catch (Exception e)
             {
@@ -100,6 +235,8 @@ namespace MCGet
         public InstallationsJson Create(string path)
         {
             InstallationsJson json = new InstallationsJson();
+            jsonRoot = new JsonObject();
+            json.Load(jsonRoot);
             this.path = path;
 
             installations = json;
@@ -111,8 +248,9 @@ namespace MCGet
         {
             try
             {
+                installations.Save(jsonRoot);
                 JsonSerializerOptions options = new() { WriteIndented = true };
-                File.WriteAllText(Path.Join(path, filename), JsonSerializer.Serialize(installations, options));
+                File.WriteAllText(Path.Join(path, filename), jsonRoot.ToJsonString(options));
             }
             catch (Exception e)
             {
