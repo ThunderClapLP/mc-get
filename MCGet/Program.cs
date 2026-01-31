@@ -196,7 +196,7 @@ Examples:
                                         if (insManager.SetSetting(settingName, settingValue))
                                             CTools.WriteError("Setting \"" + settingName + "\" to \"" + settingValue + "\"", 0);
                                         else
-                                            CTools.WriteError("Setting with the name \"" + settingName + "\" deos not exist.", 1);
+                                            CTools.WriteError("Setting with the name \"" + settingName + "\" does not exist.", 1);
                                     }
                                     catch (Exception e)
                                     {
@@ -224,7 +224,7 @@ Examples:
                                 if (insManager.UnsetSetting(args[i + 1]))
                                     CTools.WriteError("Resetting \"" + args[i + 1] + "\"", 0);
                                 else
-                                    CTools.WriteError("Setting with the name \"" + args[i + 1] + "\" deos not exist.", 1);
+                                    CTools.WriteError("Setting with the name \"" + args[i + 1] + "\" does not exist.", 1);
 
                                 insManager.Save();
                             }
@@ -1307,7 +1307,7 @@ Examples:
                 manifestPath = dir + tempDir + "archive/modrinth.index.json";
             } else
             {
-                CTools.WriteError("Could find manifest file");
+                CTools.WriteError("Could not find manifest file");
                 RevertChanges();
                 return false;
             }
@@ -1382,7 +1382,7 @@ Examples:
                     else if (System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.Arm64)
                         javaUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_aarch64_linux_hotspot_21.0.6_7.tar.gz";
 #else
-                CTools.WriteError("mc-get needs to be build for .net 7.0 or later to download java on linux!\nPlease manually install java 17 or later in your distribution.", 1);
+                CTools.WriteError("mc-get needs to be build for .net 7.0 or later to download Java on linux!\nPlease manually install Java 17 or later in your distribution.", 1);
                 return false;
 #endif
                 }
@@ -1394,7 +1394,7 @@ Examples:
                     else if (System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.Arm64)
                         javaUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_aarch64_mac_hotspot_21.0.6_7.tar.gz";
 #else
-                CTools.WriteError("mc-get needs to be build for .net 7.0 or later to download java on mac!\nPlease manually install java 17 or later.", 1);
+                CTools.WriteError("mc-get needs to be build for .net 7.0 or later to download Java on mac!\nPlease manually install Java 17 or later.", 1);
                 return false;
 #endif
                 }
@@ -1510,7 +1510,7 @@ Examples:
         {
             if (Directory.Exists(dir + tempDir + "archive/overrides") && (Directory.GetDirectories(dir + tempDir + "archive/overrides").Length > 0 || Directory.GetFiles(dir + tempDir + "archive/overrides").Length > 0))
             {
-                CTools.WriteError("The modpack suggests custom configfiles.", 0);
+                CTools.WriteError("The modpack suggests custom config files.", 0);
                 if (!CTools.ConfirmDialog("Do you want to override these? (Recommended)", true))
                     return;
 
