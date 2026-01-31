@@ -68,6 +68,15 @@ How to set the CurseForge API key:
       mc-get remove installation fabulously-optimized
       mc-get remove mod fabulously-optimized sodium
 
+## Settings
+
+The following settings can be set with ```mc-get --set <name>=<value>```:
+
+    minecraftPath - Path of your Minecraft installation.
+    defaultInstallationPath - Path where new installations will be put when --path is not set
+    cfApiUrl - CurseForge API Url
+    cfApiKey - CurseForge API Key
+
 ## OS Compatibility
 
  - Windows: Working (last tested: v0.3.1)
