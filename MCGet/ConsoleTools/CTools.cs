@@ -69,9 +69,18 @@ namespace ConsoleTools
             return val;
         }
 
-        public static void WriteLine(dynamic value)
+        public static void WriteLine(bool value)
         {
-            value ??= "";
+            lock(ConsoleLock) Console.WriteLine(value);
+        }
+
+        public static void WriteLine(int value)
+        {
+            lock(ConsoleLock) Console.WriteLine(value);
+        }
+
+        public static void WriteLine(long value)
+        {
             lock(ConsoleLock) Console.WriteLine(value);
         }
 
@@ -90,9 +99,17 @@ namespace ConsoleTools
             WriteLine("");
         }
 
-        public static void Write(dynamic value)
+        public static void Write(bool value)
         {
-            value ??= "";
+            lock(ConsoleLock) Console.Write(value);
+        }
+        public static void Write(int value)
+        {
+            lock(ConsoleLock) Console.Write(value);
+        }
+
+        public static void Write(long value)
+        {
             lock(ConsoleLock) Console.Write(value);
         }
 
