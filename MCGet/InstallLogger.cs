@@ -8,11 +8,11 @@ using System.IO;
 
 namespace MCGet
 {
-    public class BackupLog
+    public class InstallLog
     {
-        public List<BackupFile>? installedMods { get; set; }
-        public List<BackupFile>? failedMods { get; set; }
-        public List<BackupFile>? overrides { get; set; }
+        public List<LogFile>? installedMods { get; set; }
+        public List<LogFile>? failedMods { get; set; }
+        public List<LogFile>? overrides { get; set; }
         public string archiveFile { get; set; } = "";
         public string? minecraftPath { get; set; }
         public string? installationPath { get; set; }
@@ -20,7 +20,7 @@ namespace MCGet
         public string? modloaderProfile { get; set; }
     }
 
-    public class BackupFile
+    public class LogFile
     {
         public string? path { get; set; }
         public bool overridden { get; set; }
@@ -28,26 +28,26 @@ namespace MCGet
 
         public string sha512 { get; set; } = "";
 
-        public BackupFile(string path, bool overridden, string projectId, string sha512 = "") { this.path = path; this.overridden = overridden; this.projectId = projectId; this.sha512 = sha512; }
-        public BackupFile() { }
+        public LogFile(string path, bool overridden, string projectId, string sha512 = "") { this.path = path; this.overridden = overridden; this.projectId = projectId; this.sha512 = sha512; }
+        public LogFile() { }
     }
 
-    public class Backup
+    public class InstallLogger
     {
-        public BackupLog log;
+        public InstallLog log;
         public string path = "";
         public string filename = "log.Json";
 
         public delegate void UpdateProgressDelegate(int progress);
         public event UpdateProgressDelegate? updateProgress;
         
-        public Backup(string path)
+        public InstallLogger(string path)
         {
-            BackupLog? bl = Load(path) ?? Create(path);
+            InstallLog? bl = Load(path) ?? Create(path);
             log = bl;
         }
 
-        public BackupLog? Load(string path)
+        public InstallLog? Load(string path)
         {
             this.path = path;
 
@@ -59,7 +59,7 @@ namespace MCGet
 
             try
             {
-                return JsonSerializer.Deserialize<BackupLog>(File.ReadAllText(Path.GetFullPath(Path.Join(path, filename))));
+                return JsonSerializer.Deserialize<InstallLog>(File.ReadAllText(Path.GetFullPath(Path.Join(path, filename))));
             }
             catch (Exception)
             {
@@ -68,14 +68,14 @@ namespace MCGet
             return null;
         }
 
-        public BackupLog Create(string path)
+        public InstallLog Create(string path)
         {
-            BackupLog bl = new BackupLog();
+            InstallLog bl = new InstallLog();
             this.path = path;
 
-            bl.overrides = new List<BackupFile>();
-            bl.installedMods = new List<BackupFile>();
-            bl.failedMods = new List<BackupFile>();
+            bl.overrides = new List<LogFile>();
+            bl.installedMods = new List<LogFile>();
+            bl.failedMods = new List<LogFile>();
             bl.minecraftPath = "";
 
             log = bl;
@@ -108,11 +108,11 @@ namespace MCGet
                 log.failedMods?.Clear();
 
                 if (log.installedMods == null)
-                    log.installedMods = new List<BackupFile>();
+                    log.installedMods = new List<LogFile>();
                 if (log.failedMods == null)
-                    log.failedMods = new List<BackupFile>();
+                    log.failedMods = new List<LogFile>();
                 if (log.overrides == null)
-                    log.overrides = new List<BackupFile>();
+                    log.overrides = new List<LogFile>();
             }
             catch (Exception)
             {
@@ -148,7 +148,7 @@ namespace MCGet
                 try
                 {
                     File.Copy(orgPath, path + "/mods/" + Path.GetFileName(orgPath), true);
-                    log.installedMods?.Add(new BackupFile(Path.GetFileName(orgPath), overridden, ""));
+                    log.installedMods?.Add(new LogFile(Path.GetFileName(orgPath), overridden, ""));
                 }
                 catch (Exception)
                 {
@@ -157,7 +157,7 @@ namespace MCGet
             }
             else
             {
-                log.installedMods?.Add(new BackupFile(Path.GetFileName(orgPath), overridden, ""));
+                log.installedMods?.Add(new LogFile(Path.GetFileName(orgPath), overridden, ""));
             }
 
             return true;
@@ -175,7 +175,7 @@ namespace MCGet
                         if (!Directory.Exists(Directory.GetParent(newPath)?.FullName))
                             Directory.CreateDirectory(Directory.GetParent(newPath)?.FullName + "");
                         File.Copy(orgPath, newPath, true); ;
-                        log.overrides?.Add(new BackupFile(orgPath.Substring(log.minecraftPath.Length), overridden, ""));
+                        log.overrides?.Add(new LogFile(orgPath.Substring(log.minecraftPath.Length), overridden, ""));
                     }
                 }
                 catch (Exception)
@@ -185,7 +185,7 @@ namespace MCGet
             }
             else
             {
-                log.overrides?.Add(new BackupFile(orgPath, overridden, ""));
+                log.overrides?.Add(new LogFile(orgPath, overridden, ""));
             }
 
             return true;
@@ -195,7 +195,7 @@ namespace MCGet
         {
             if (log.failedMods == null)
                 return;
-            log.failedMods.Add(new BackupFile("", false, projectId));
+            log.failedMods.Add(new LogFile("", false, projectId));
         }
 
         public bool RestoreMods()
@@ -208,7 +208,7 @@ namespace MCGet
                 }
 
                 bool failed = false;
-                foreach (BackupFile mod in log.installedMods)
+                foreach (LogFile mod in log.installedMods)
                 {
                     try
                     {
@@ -235,7 +235,7 @@ namespace MCGet
             if (log.overrides != null)
             {
                 bool failed = false;
-                foreach (BackupFile over in log.overrides)
+                foreach (LogFile over in log.overrides)
                 {
                     try
                     {
@@ -283,7 +283,7 @@ namespace MCGet
         {
             if (log.installedMods == null)
                 return false;
-            foreach (BackupFile mod in log.installedMods)
+            foreach (LogFile mod in log.installedMods)
             {
                 if (mod.projectId == projectId)
                     return true;
@@ -295,7 +295,7 @@ namespace MCGet
         {
             if (log.failedMods == null)
                 return false;
-            foreach (BackupFile mod in log.failedMods)
+            foreach (LogFile mod in log.failedMods)
             {
                 if (mod.projectId == projectId)
                     return true;
@@ -303,11 +303,11 @@ namespace MCGet
             return false;
         }
 
-        public BackupFile? GetModFromPath(string path)
+        public LogFile? GetModFromPath(string path)
         {
             if (log.installedMods == null)
                 return null;
-            foreach (BackupFile mod in log.installedMods)
+            foreach (LogFile mod in log.installedMods)
             {
                 if (mod.path == path)
                     return mod;

@@ -96,7 +96,7 @@ namespace MCGet.Platforms
                     try
                     {
                         if (file.GetProperty("hashes").GetProperty("sha512").ToString() != null)
-                            Program.backup.AddFailedMod(file.GetProperty("hashes").GetProperty("sha512").ToString() + "");
+                            Program.installLogger.AddFailedMod(file.GetProperty("hashes").GetProperty("sha512").ToString() + "");
                     }
                     catch (Exception) { }
                 }

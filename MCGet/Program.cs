@@ -31,7 +31,7 @@ namespace MCGet
         public static string archiveDir = "/archives/";
         public static bool modifyExisting = false;
         public static string api_user_agent = "";
-        public static Backup backup = new Backup("");
+        public static InstallLogger installLogger = new InstallLogger("");
         public static InstallationManager insManager = new InstallationManager();
 
         //command line args
@@ -328,7 +328,7 @@ Examples:
                 return;
             }
 
-            backup = new Backup(dir + backupDir);
+            installLogger = new InstallLogger(dir + backupDir);
             insManager.LoadOrCreate(dir);
 
             //load CurseForge settings
@@ -874,7 +874,7 @@ Examples:
             }
 
             CTools.Write("Cleaning up");
-            if (backup.Clean())
+            if (installLogger.Clean())
                 CTools.WriteResult(true);
             else
                 CTools.WriteResult(false);
@@ -958,14 +958,14 @@ Examples:
 
             //if (!cServer) //do not backup on server
             //do not save backup at all
-            //backup.Save();
+            //installLogger.Save();
             insManager.AddInstallation(insManager.currInstallation);
             insManager.Save();
 
             CTools.Write("Cleaning up");
             try
             {
-                bool backup_clean_success = backup.Clean();
+                bool backup_clean_success = installLogger.Clean();
                 if (Directory.Exists(dir + tempDir))
                     System.IO.Directory.Delete(dir + tempDir, true);
                 if (!backup_clean_success)
@@ -1222,11 +1222,11 @@ Examples:
                         insManager.installations.settings.minecraftPath = insManager.currInstallation.minecraftDir ?? ""; //set path in settings 
                 }
 
-                if (backup.log.minecraftPath + "" != insManager.currInstallation.minecraftDir)
+                if (installLogger.log.minecraftPath + "" != insManager.currInstallation.minecraftDir)
                 {
-                    backup.Clean();
+                    installLogger.Clean();
                 }
-                backup.SetMinecraftPath(insManager.currInstallation.minecraftDir + "");
+                installLogger.SetMinecraftPath(insManager.currInstallation.minecraftDir + "");
             }
             else
             {
@@ -1265,11 +1265,11 @@ Examples:
 
                     insManager.currInstallation.archivePath = dir + archiveDir + Path.GetFileName(insManager.currInstallation.archivePath);
                 }
-                backup.log.archiveFile = Path.GetFileName(insManager.currInstallation.archivePath);
+                installLogger.log.archiveFile = Path.GetFileName(insManager.currInstallation.archivePath);
             }
             catch (Exception)
             {
-                backup.log.archiveFile = insManager.currInstallation.archivePath; //use absolute path on failure
+                installLogger.log.archiveFile = insManager.currInstallation.archivePath; //use absolute path on failure
             }
         }
 
@@ -1466,7 +1466,7 @@ Examples:
                     bool backupFailed = false;
                     foreach (string mod in Directory.GetFiles(modsDir))
                     {
-                        if (!backup.BackopMod(mod, true))
+                        if (!installLogger.BackopMod(mod, true))
                         {
                             backupFailed = true;
                         }
@@ -1557,7 +1557,7 @@ Examples:
             {
                 string newPath = dest + file.Substring(source.Length);
 
-                backup.BackopOverride(newPath, File.Exists(newPath));
+                installLogger.BackopOverride(newPath, File.Exists(newPath));
 
                 File.Copy(file, newPath, true);
 
@@ -1571,10 +1571,10 @@ Examples:
 
         static void RestoreBackup()
         {
-            if (backup.log.installedMods == null || backup.log.overrides == null)
+            if (installLogger.log.installedMods == null || installLogger.log.overrides == null)
                 return;
 
-            if (backup.log.installedMods.Count > 0 || backup.log.overrides.Count > 0)
+            if (installLogger.log.installedMods.Count > 0 || installLogger.log.overrides.Count > 0)
             {
                 if (!CTools.ConfirmDialog("Restore previously saved backup?", true))
                     return;
@@ -1585,14 +1585,14 @@ Examples:
 
                 //delete automatically added launcher profile
                 if (!modifyExisting)
-                    backup.DeleteLauncherProfile();
+                    installLogger.DeleteLauncherProfile();
 
-                backup.updateProgress += (int progress) =>
+                installLogger.updateProgress += (int progress) =>
                 {
                     spinner.Update();
                 };
 
-                if (!backup.RestoreMods() || !backup.RestoreOverrides())
+                if (!installLogger.RestoreMods() || !installLogger.RestoreOverrides())
                 {
                     CTools.WriteResult(false);
                     CTools.WriteError("An error occured while restoring! Some files might be missing", 1);
@@ -1606,7 +1606,7 @@ Examples:
                     CTools.WriteResult(true);
                 }
 
-                backup.Clean();
+                installLogger.Clean();
             }
 
 
@@ -1636,7 +1636,7 @@ Examples:
                 }
             }
             CTools.Write("Cleaning up");
-            if (backup.Clean())
+            if (installLogger.Clean())
                 CTools.WriteResult(true);
             else
                 CTools.WriteResult(false);

@@ -93,7 +93,7 @@ namespace MCGet.Platforms
                     try
                     {
                         if (file.GetProperty("projectID").ToString() != null)
-                            Program.backup.AddFailedMod(file.GetProperty("projectID").ToString() + "");
+                            Program.installLogger.AddFailedMod(file.GetProperty("projectID").ToString() + "");
                     }
                     catch (Exception) { }
                 }

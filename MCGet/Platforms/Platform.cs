@@ -91,7 +91,7 @@ namespace MCGet.Platforms
                     }
 
                     if (file.StartsWith("mods/") && !File.Exists(modsDir + "/" + Path.GetFileName(file)))
-                        Program.backup.BackopMod(modsDir + "/" + Path.GetFileName(file), false);
+                        Program.installLogger.BackopMod(modsDir + "/" + Path.GetFileName(file), false);
 
                     File.Move(Program.dir + Program.tempDir + "mods/" + file, absDestPath + "/" + file, true);
                     bar.value++;
@@ -157,7 +157,7 @@ namespace MCGet.Platforms
                 string newId = Program.insManager.currInstallation.Id ?? new Random().Next().ToString();
                 ph.SetProfieId(newProfile, newId);
                 ph.SaveProfiles(Program.insManager.currInstallation.minecraftDir + "/launcher_profiles.json");
-                Program.backup.log.modloaderProfile = newId;
+                Program.installLogger.log.modloaderProfile = newId;
                 Program.insManager.currInstallation.modloaderProfile = newId;
             }
 
