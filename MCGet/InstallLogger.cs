@@ -43,29 +43,13 @@ namespace MCGet
         
         public InstallLogger(string path)
         {
-            InstallLog? bl = Load(path) ?? Create(path);
+            InstallLog? bl = Create(path);
             log = bl;
         }
 
         public InstallLog? Load(string path)
         {
-            this.path = path;
-
-            if (path == "")
-                return null;
-
-            if (!File.Exists(Path.GetFullPath(Path.Join(path, filename))))
-                return null;
-
-            try
-            {
-                return JsonSerializer.Deserialize<InstallLog>(File.ReadAllText(Path.GetFullPath(Path.Join(path, filename))));
-            }
-            catch (Exception)
-            {
-                
-            }
-            return null;
+            throw new NotImplementedException("Load functionallity is disabled for now.");
         }
 
         public InstallLog Create(string path)
@@ -123,17 +107,7 @@ namespace MCGet
 
         public bool Save()
         {
-            try
-            {
-                JsonSerializerOptions options = new() { WriteIndented = true };
-                File.WriteAllText(Path.Join(path, filename), JsonSerializer.Serialize(log, options));
-            }
-            catch (Exception)
-            {
-
-                return false;
-            }
-            return true;
+            throw new NotImplementedException("Save functionallity is disabled for now.");
         }
 
         public void SetMinecraftPath(string path)
