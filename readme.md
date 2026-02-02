@@ -104,3 +104,7 @@ Run following command to generate an executable:
     dotnet build
 
 For more informations about building .Net applications visit [this article](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-build)
+
+## License
+
+This project is licensed under the [MIT](./LICENSE) license.
