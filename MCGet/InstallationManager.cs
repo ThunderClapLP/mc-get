@@ -53,25 +53,66 @@ namespace MCGet
 
     public class Settings
     {
-        public string minecraftPath { get; set; } = "";
-        public string defaultInstallationPath { get; set; } = "./installations";
-        public string cfApiUrl { get; set; } = "https://api.curseforge.com/v1"; //full curseforge api url including all static parts
-        public string? cfApiKey { get; set; } //curseforge api key
+        private Dictionary<string, string> dict = new Dictionary<string, string>();
+
+        public const string MINECRAFT_PATH = "minecraftPath";
+        public const string DEFAULT_INSTALLATION_PATH = "defaultInstallationPath";
+        /// <summary>
+        /// full curseforge api url including all static parts
+        /// </summary>
+        public const string CF_API_URL = "cfApiUrl";
+        /// <summary>
+        /// curseforge api key
+        /// </summary>
+        public const string CF_API_KEY = "cfApiKey";
+
+        public Settings()
+        {
+            dict[MINECRAFT_PATH] = "";
+            dict[DEFAULT_INSTALLATION_PATH] = "./installations";
+            dict[CF_API_URL] = "https://api.curseforge.com/v1"; 
+            dict[CF_API_KEY] = "";
+        }
+
+        /// <summary>
+        /// Gets the value of the given setting
+        /// </summary>
+        /// <param name="setting"></param>
+        /// <returns> null if setting does not exist</returns>
+        public string? GetOrNull(string setting)
+        {
+            string? value;
+            dict.TryGetValue(setting, out value);
+
+            return value;
+        }
+
+        public string Get(string setting)
+        {
+            return dict[setting];
+        }
+
+        public void Set(string setting, string value)
+        {
+            dict[setting] = value;
+        }
 
         public void Load(JsonNode element)
         {
-            minecraftPath = (string?)element["minecraftPath"] ?? minecraftPath;
-            defaultInstallationPath = (string?)element["defaultInstallationPath"] ?? defaultInstallationPath;
-            cfApiUrl = (string?)element["cfApiUrl"] ?? cfApiUrl;
-            cfApiKey = (string?)element["cfApiKey"];
+            dict.Clear();
+
+            foreach (KeyValuePair<string, JsonNode?> setting in element?.AsObject().AsEnumerable() ?? Array.Empty<KeyValuePair<string, JsonNode?>>())
+            {
+                dict[setting.Key] = (string?)setting.Value ?? "";
+            }
         }
 
         public void Save(JsonNode element)
         {
-            element["minecraftPath"] = minecraftPath;
-            element["defaultInstallationPath"] = defaultInstallationPath;
-            element["cfApiUrl"] = cfApiUrl;
-            element["cfApiKey"] = cfApiKey;
+            foreach (KeyValuePair<string, string> setting in dict)
+            {
+                element[setting.Key] = setting.Value;
+            }
         }
     }
     public class Installation
@@ -262,7 +303,7 @@ namespace MCGet
 
         public void SetMinecraftPath(string path)
         {
-            installations.settings.minecraftPath = path;
+            installations.settings.Set(Settings.MINECRAFT_PATH, path);
         }
 
         /// <summary>
@@ -277,26 +318,26 @@ namespace MCGet
         {
             switch (name)
             {
-                case "minecraftPath":
+                case Settings.MINECRAFT_PATH:
                     if (Directory.Exists(value))
-                        installations.settings.minecraftPath = value;
+                        installations.settings.Set(Settings.MINECRAFT_PATH, value);
                     else
                         throw new DirectoryNotFoundException("Directory \"" + value + "\" does not exist");
                     return true;
-                case "defaultInstallationPath":
-                    installations.settings.defaultInstallationPath = value;
+                case Settings.DEFAULT_INSTALLATION_PATH:
+                    installations.settings.Set(Settings.DEFAULT_INSTALLATION_PATH, value);
                     return true;
-                case "cfApiUrl":
+                case Settings.CF_API_URL:
                     {
                         Uri? uri;
                         if (Uri.TryCreate(value, UriKind.Absolute, out uri) && (uri?.Scheme == Uri.UriSchemeHttp || uri?.Scheme == Uri.UriSchemeHttps))
-                            installations.settings.cfApiUrl = uri.AbsoluteUri.TrimEnd('/');
+                            installations.settings.Set(Settings.CF_API_URL, uri.AbsoluteUri.TrimEnd('/'));
                         else
                             throw new UriFormatException("\"" + value + "\" is not a valid url");
                         return true;
                     }
-                case "cfApiKey":
-                    installations.settings.cfApiKey = value;
+                case Settings.CF_API_KEY:
+                    installations.settings.Set(Settings.CF_API_KEY, value);
                     return true;
             }
             return false;
@@ -309,42 +350,15 @@ namespace MCGet
         /// <returns>true if setting exists</returns>
         public bool UnsetSetting(string name)
         {
-            switch (name)
+            Settings defaultSettings = new Settings();
+            string? value = defaultSettings.GetOrNull(name);
+            if (value != null)
             {
-                case "minecraftPath":
-                    installations.settings.minecraftPath = new Settings().minecraftPath;
-                    return true;
-                case "defaultInstallationPath":
-                    installations.settings.defaultInstallationPath = new Settings().defaultInstallationPath;
-                    return true;
-                case "cfApiUrl":
-                    installations.settings.cfApiUrl = new Settings().cfApiUrl;
-                    return true;
-                case "cfApiKey":
-                    installations.settings.cfApiKey = new Settings().cfApiKey;
-                    return true;
+                installations.settings.Set(name, value);
+                return true;
             }
-            return false;
-        }
 
-        /// <summary>
-        /// Gets the value of the given setting
-        /// </summary>
-        /// <param name="name"></param>
-        public string? GetSetting(string name)
-        {
-            switch (name)
-            {
-                case "minecraftPath":
-                    return installations.settings.minecraftPath;
-                case "defaultInstallationPath":
-                    return installations.settings.defaultInstallationPath;
-                case "cfApiUrl":
-                    return installations.settings.cfApiUrl;
-                case "cfApiKey":
-                    return installations.settings.cfApiKey;
-            }
-            return null;
+            return false;
         }
 
         public static string LocalToGlobalPath(string path)
@@ -356,7 +370,7 @@ namespace MCGet
 
         public string GetFullDefaultInstallationPath()
         {
-            string path = installations.settings.defaultInstallationPath ?? "";
+            string path = installations.settings.Get(Settings.DEFAULT_INSTALLATION_PATH);
             return LocalToGlobalPath(path);
         }
 

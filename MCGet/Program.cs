@@ -245,11 +245,11 @@ Examples:
                                 invalidArgs = false;
                                 insManager.LoadOrCreate(dir);
 
-                                string? setting = insManager.GetSetting(args[i + 1]);
+                                string? setting = insManager.installations.settings.GetOrNull(args[i + 1]);
                                 if (setting != null)
                                     CTools.WriteLine("Setting\n  \"" + args[i + 1] + "\" = \"" + setting + "\"");
                                 else
-                                    CTools.WriteError("Setting with the name \"" + args[i + 1] + "\" is not set or does not exist.", 1);
+                                    CTools.WriteError("Setting with the name \"" + args[i + 1] + "\" does not exist.", 1);
 
                                 insManager.Save();
                             }
@@ -357,8 +357,8 @@ Examples:
             insManager.LoadOrCreate(dir);
 
             //load CurseForge settings
-            CurseForge.apiurl = insManager.installations.settings.cfApiUrl;
-            CurseForge.apikey = insManager.installations.settings.cfApiKey ?? CurseForge.apikey;
+            CurseForge.apiurl = insManager.installations.settings.Get(Settings.CF_API_URL);
+            CurseForge.apikey = insManager.installations.settings.Get(Settings.CF_API_KEY);
 
             //prepare
             if (command == COMMANDS.INSTALL || insManager.currInstallation.archivePath != "") //only if we need to install a pack
@@ -416,7 +416,7 @@ Examples:
                                             else
                                             {
                                                 ProfileHandler ph = new ProfileHandler();
-                                                string profilePath = insManager.installations.settings.minecraftPath;
+                                                string profilePath = insManager.installations.settings.Get(Settings.MINECRAFT_PATH);
                                                 if (profilePath != "")
                                                     ph.LoadProfiles(profilePath + "/launcher_profiles.json");
                                                 CTools.WriteLine("    " + CTools.LimitText("ID", int.MaxValue.ToString().Length, true) + " | ProfileName");
@@ -471,7 +471,7 @@ Examples:
                                         else
                                         {
                                             ProfileHandler ph = new ProfileHandler();
-                                            string profilePath = insManager.installations.settings.minecraftPath;
+                                            string profilePath = insManager.installations.settings.Get(Settings.MINECRAFT_PATH);
                                             if (profilePath != "")
                                                 ph.LoadProfiles(profilePath + "/launcher_profiles.json");
                                             CTools.WriteLine("    " + CTools.LimitText("ID", int.MaxValue.ToString().Length, true) + " | ProfileName | slug");
@@ -623,8 +623,8 @@ Examples:
                         else if (cfResult.Result.error == SearchResult.ErrorCode.ConnectionRefused)
                         {
                             CTools.WriteError("Connection to CurseForge refused! Did you set the API up correctly?", 1);
-                            CTools.WriteLine("  cfApiUrl=" + insManager.installations.settings.cfApiUrl);
-                            if ((insManager.installations.settings.cfApiKey ?? "") == "")
+                            CTools.WriteLine("  cfApiUrl=" + insManager.installations.settings.Get(Settings.CF_API_URL));
+                            if (insManager.installations.settings.Get(Settings.CF_API_KEY) == "")
                             {
                                 CTools.WriteLine("  cfApiKey is not set!");
                                 CTools.WriteError("You can set the API key with: " + Assembly.GetExecutingAssembly().GetName().Name + " --set cfApiKey=<your key>", 0);
@@ -655,7 +655,7 @@ Examples:
                         {
                             //list installations
                             ProfileHandler ph = new ProfileHandler();
-                            string profilePath = insManager.installations.settings.minecraftPath;
+                            string profilePath = insManager.installations.settings.Get(Settings.MINECRAFT_PATH);
                             if (profilePath != "")
                                 ph.LoadProfiles(profilePath + "/launcher_profiles.json");
                             List<Installation> installs = insManager.installations.installations;
@@ -686,7 +686,7 @@ Examples:
                             else if (searchResult.Count > 1)
                             {
                                 ProfileHandler ph = new ProfileHandler();
-                                string profilePath = insManager.installations.settings.minecraftPath;
+                                string profilePath = insManager.installations.settings.Get(Settings.MINECRAFT_PATH);
                                 if (profilePath != "")
                                     ph.LoadProfiles(profilePath + "/launcher_profiles.json");
                                 CTools.WriteLine("    " + CTools.LimitText("ID", int.MaxValue.ToString().Length, true) + " | ProfileName | slug");
@@ -748,7 +748,7 @@ Examples:
                         else if (installationSerchResult.Count > 1)
                         {
                             ProfileHandler ph = new ProfileHandler();
-                            string profilePath = insManager.installations.settings.minecraftPath;
+                            string profilePath = insManager.installations.settings.Get(Settings.MINECRAFT_PATH);
                             if (profilePath != "")
                                 ph.LoadProfiles(profilePath + "/launcher_profiles.json");
                             CTools.WriteLine("    " + CTools.LimitText("ID", int.MaxValue.ToString().Length, true) + " | ProfileName | slug | DirectoryName");
@@ -1082,8 +1082,8 @@ Examples:
             else if (cfResult?.Result.error == GetProjectResult.ErrorCode.ConnectionRefused)
             {
                 CTools.WriteError("Connection to CurseForge refused! Did you set the API up correctly?", 1);
-                CTools.WriteLine("  cfApiUrl=" + insManager.installations.settings.cfApiUrl);
-                if ((insManager.installations.settings.cfApiKey ?? "") == "")
+                CTools.WriteLine("  cfApiUrl=" + insManager.installations.settings.Get(Settings.CF_API_URL));
+                if (insManager.installations.settings.Get(Settings.CF_API_KEY) == "")
                 {
                     CTools.WriteLine("  cfApiKey is not set!");
                     CTools.WriteError("You can set the API key with: " + Assembly.GetExecutingAssembly().GetName().Name + " --set cfApiKey=<your key>", 0);
@@ -1137,13 +1137,13 @@ Examples:
 
             if (insManager.currInstallation.installationDir == "")
             {
-                if (CTools.ConfirmDialog("Install modpack into \"" + InstallationManager.LocalToGlobalPath(insManager.installations.settings.defaultInstallationPath).Replace("\\", "/") + "\"?", true))
+                if (CTools.ConfirmDialog("Install modpack into \"" + InstallationManager.LocalToGlobalPath(insManager.installations.settings.Get(Settings.DEFAULT_INSTALLATION_PATH)).Replace("\\", "/") + "\"?", true))
                 {
-                    insManager.currInstallation.installationDir = insManager.installations.settings.defaultInstallationPath;
+                    insManager.currInstallation.installationDir = insManager.installations.settings.Get(Settings.DEFAULT_INSTALLATION_PATH);
                     try
                     {
                         //make sure install dir exists for disk space calculation to work on linux
-                        Directory.CreateDirectory(InstallationManager.LocalToGlobalPath(insManager.installations.settings.defaultInstallationPath));
+                        Directory.CreateDirectory(InstallationManager.LocalToGlobalPath(insManager.installations.settings.Get(Settings.DEFAULT_INSTALLATION_PATH)));
                     }
                     catch (Exception) { }
                 }
@@ -1162,7 +1162,7 @@ Examples:
 
                     //set default?
                     if (CTools.ConfirmDialog("Use selected dir for all future installations?", false))
-                        insManager.installations.settings.defaultInstallationPath = insManager.currInstallation.installationDir;
+                        insManager.installations.settings.Set(Settings.DEFAULT_INSTALLATION_PATH, insManager.currInstallation.installationDir);
                 }
             }
             if (!modifyExisting && !insManager.currInstallation.isServer)
@@ -1192,7 +1192,7 @@ Examples:
                 //try backup minecraft path
                 if (insManager.currInstallation.minecraftDir == "")
                 {
-                    insManager.currInstallation.minecraftDir = insManager.installations.settings.minecraftPath;
+                    insManager.currInstallation.minecraftDir = insManager.installations.settings.Get(Settings.MINECRAFT_PATH);
                     if (insManager.currInstallation.minecraftDir != "" && Directory.Exists(insManager.currInstallation.minecraftDir))
                         confirmed = true; //don't ask user to confirm if configured already
                 }
@@ -1244,7 +1244,7 @@ Examples:
                             insManager.currInstallation.minecraftDir = Path.GetFullPath(insManager.currInstallation.minecraftDir);
                     }
                     else
-                        insManager.installations.settings.minecraftPath = insManager.currInstallation.minecraftDir ?? ""; //set path in settings 
+                        insManager.installations.settings.Set(Settings.MINECRAFT_PATH, insManager.currInstallation.minecraftDir ?? ""); //set path in settings 
                 }
 
                 if (installLogger.log.minecraftPath + "" != insManager.currInstallation.minecraftDir)
