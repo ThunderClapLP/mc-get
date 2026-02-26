@@ -98,6 +98,7 @@ Flags:
   --server                  :  installs mod / modpack as server
   --set <name>=<value>      :  sets a setting to the specified value
   --unset <name>            :  resets a setting to its default value
+  --get <name>              :  prints the value of a setting
   --version                 :  displays the current version
 
 Commands:
@@ -225,6 +226,30 @@ Examples:
                                     CTools.WriteError("Resetting \"" + args[i + 1] + "\"", 0);
                                 else
                                     CTools.WriteError("Setting with the name \"" + args[i + 1] + "\" does not exist.", 1);
+
+                                insManager.Save();
+                            }
+
+                            if (invalidArgs)
+                            {
+                                invalidArgsSuggestion = new string[] { args[i] + " <setting name>" };
+                                i = args.Length; //exit the loop. break won't work because of the switch case
+                            }
+                        }
+                        break;
+                    case "--get":
+                        {
+                            invalidArgs = true;
+                            if (i < args.Length - 1)
+                            {
+                                invalidArgs = false;
+                                insManager.LoadOrCreate(dir);
+
+                                string? setting = insManager.GetSetting(args[i + 1]);
+                                if (setting != null)
+                                    CTools.WriteLine("Setting\n  \"" + args[i + 1] + "\" = \"" + setting + "\"");
+                                else
+                                    CTools.WriteError("Setting with the name \"" + args[i + 1] + "\" is not set or does not exist.", 1);
 
                                 insManager.Save();
                             }

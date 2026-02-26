@@ -327,6 +327,26 @@ namespace MCGet
             return false;
         }
 
+        /// <summary>
+        /// Gets the value of the given setting
+        /// </summary>
+        /// <param name="name"></param>
+        public string? GetSetting(string name)
+        {
+            switch (name)
+            {
+                case "minecraftPath":
+                    return installations.settings.minecraftPath;
+                case "defaultInstallationPath":
+                    return installations.settings.defaultInstallationPath;
+                case "cfApiUrl":
+                    return installations.settings.cfApiUrl;
+                case "cfApiKey":
+                    return installations.settings.cfApiKey;
+            }
+            return null;
+        }
+
         public static string LocalToGlobalPath(string path)
         {
             if (path.Replace("\\", "/").StartsWith("./"))

@@ -36,6 +36,7 @@ How to set the CurseForge API key:
       --server                  :  installs mod / modpack as server
       --set <name>=<value>      :  sets a setting to the specified value
       --unset <name>            :  resets a setting to its default value
+      --get <name>              :  prints the value of a setting
       --version                 :  displays the current version
     
     Commands:
