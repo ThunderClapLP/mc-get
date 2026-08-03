@@ -68,6 +68,15 @@ namespace MCGet
 
         public Settings()
         {
+            ResetDict();
+        }
+
+        /// <summary>
+        /// Clears the dict and resets its default values
+        /// </summary>
+        public void ResetDict()
+        {
+            dict.Clear();
             dict[MINECRAFT_PATH] = "";
             dict[DEFAULT_INSTALLATION_PATH] = "./installations";
             dict[CF_API_URL] = "https://api.curseforge.com/v1"; 
@@ -99,7 +108,7 @@ namespace MCGet
 
         public void Load(JsonNode element)
         {
-            dict.Clear();
+            ResetDict();
 
             foreach (KeyValuePair<string, JsonNode?> setting in element?.AsObject().AsEnumerable() ?? Array.Empty<KeyValuePair<string, JsonNode?>>())
             {
