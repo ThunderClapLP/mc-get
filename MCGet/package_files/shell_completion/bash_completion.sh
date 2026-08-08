@@ -2,7 +2,7 @@ _mc-get()
 {
   local cur prev words cword
   _init_completion || return
-  opts="--help -p --platform -s --silent -m --mc-path --path --mc-version --server --version"
+  opts="--help -p --platform -s --silent -m --mc-path --path --mc-version --server --version --set --get --unset"
   commands="install search list remove"
   
   case "$prev" in
@@ -15,6 +15,15 @@ _mc-get()
     ;;
     -p | --platform)
     COMPREPLY=( $(compgen -W "mr cf modrinth curseforge" -- ${cur}) )
+    return
+    ;;
+    --set)
+    COMPREPLY=( $(compgen -W "minecraftPath= defaultInstallationPath= cfApiUrl= cfApiKey=" -- ${cur}) )
+    compopt -o nospace
+    return
+    ;;
+    --get | --unset)
+    COMPREPLY=( $(compgen -W "minecraftPath defaultInstallationPath cfApiUrl cfApiKey" -- ${cur}) )
     return
     ;;
     list)

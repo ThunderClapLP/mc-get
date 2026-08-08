@@ -4,7 +4,7 @@ _mc-get() {
   local -a opts commands
   local cur prev
 
-  opts=(--help -p --platform -s --silent -m --mc-path --path --mc-version --server --version)
+  opts=(--help -p --platform -s --silent -m --mc-path --path --mc-version --server --version --set --get --unset)
   commands=(install search list remove)
 
   cur=${words[CURRENT]}
@@ -19,15 +19,23 @@ _mc-get() {
       return
       ;;
     -p | --platform)
-      compadd mr cf modrinth curseforge
+      compadd -- mr cf modrinth curseforge
+      return
+      ;;
+    --set)
+      compadd -S '' -- 'minecraftPath=' 'defaultInstallationPath=' 'cfApiUrl=' 'cfApiKey='
+      return
+      ;;
+      --get | --unset)
+      compadd -- minecraftPath defaultInstallationPath cfApiUrl cfApiKey
       return
       ;;
     list)
-      compadd installs mods
+      compadd -- installs mods
       return
       ;;
     remove)
-      compadd installation mod
+      compadd -- installation mod
       return
       ;;
   esac
