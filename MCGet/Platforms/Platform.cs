@@ -15,6 +15,7 @@ namespace MCGet.Platforms
         Modpack = 1,
         Mod = 2,
         Shader = 3,
+        ResourcePack = 4,
     }
 
     public class SearchResult

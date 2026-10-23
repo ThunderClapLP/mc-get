@@ -289,6 +289,9 @@ namespace MCGet.Platforms
                     case "shader":
                         result.projectType = ProjectType.Shader;
                         break;
+                    case "resourcepack":
+                        result.projectType = ProjectType.ResourcePack;
+                        break;
                     default:
                         result.projectType = ProjectType.Invalid;
                         break;

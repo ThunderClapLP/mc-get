@@ -452,7 +452,7 @@ Examples:
                                     insManager.currInstallation.archivePath = dir + archiveDir + Path.GetFileName(HttpUtility.UrlDecode(result.urls[0]));
                                     CTools.WriteResult(true, spinner);
                                 }
-                                else if (result.projectType == ProjectType.Mod || result.projectType == ProjectType.Shader)
+                                else if (result.projectType == ProjectType.Mod || result.projectType == ProjectType.Shader || result.projectType == ProjectType.ResourcePack)
                                 {
                                     //single resource
 
@@ -469,6 +469,10 @@ Examples:
                                         case ProjectType.Shader:
                                             resourceTypeName = "shader";
                                             resourceTargetFolderName = "shaderpacks";
+                                            break;
+                                        case ProjectType.ResourcePack:
+                                            resourceTypeName = "resource pack";
+                                            resourceTargetFolderName = "resourcepacks";
                                             break;
                                     }
                                     CTools.WriteError($"Single {resourceTypeName}: {result.name}", 0);
