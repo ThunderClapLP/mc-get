@@ -493,12 +493,21 @@ namespace MCGet.Platforms
                 if (url != null)
                 {
                     result.loader = loader;
-                    if (type == 4471) //modpack
-                        result.projectType = ProjectType.Modpack;
-                    else if (type == 6) //mod
-                        result.projectType = ProjectType.Mod;
-                    else
-                        result.projectType = ProjectType.Invalid;
+                    switch (type)
+                    {
+                        case 4471: //modpack
+                            result.projectType = ProjectType.Modpack;
+                            break;
+                        case 6: //mod
+                            result.projectType = ProjectType.Mod;
+                            break;
+                        case 6552: //shader
+                            result.projectType = ProjectType.Shader;
+                            break;
+                        default:
+                            result.projectType = ProjectType.Invalid;
+                            break;
+                    }
 
                     result.urls.Add(url);
                     result.success = true;

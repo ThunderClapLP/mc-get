@@ -277,13 +277,17 @@ namespace MCGet.Platforms
                 }
                 loaderString = loaderString.TrimEnd(',');
                 result.loader = loaderString;
-                switch (doc.RootElement.GetProperty("project_type").GetString()?.ToLower() ?? "")
+                string projectType = doc.RootElement.GetProperty("project_type").GetString()?.ToLower() ?? "";
+                switch (projectType)
                 {
                     case "modpack":
                         result.projectType = ProjectType.Modpack;
                         break;
                     case "mod":
                         result.projectType = ProjectType.Mod;
+                        break;
+                    case "shader":
+                        result.projectType = ProjectType.Shader;
                         break;
                     default:
                         result.projectType = ProjectType.Invalid;

@@ -452,10 +452,26 @@ Examples:
                                     insManager.currInstallation.archivePath = dir + archiveDir + Path.GetFileName(HttpUtility.UrlDecode(result.urls[0]));
                                     CTools.WriteResult(true, spinner);
                                 }
-                                else if (result.projectType == ProjectType.Mod)
+                                else if (result.projectType == ProjectType.Mod || result.projectType == ProjectType.Shader)
                                 {
-                                    //single mod
-                                    CTools.WriteError("Single mod: " + result.name, 0);
+                                    //single resource
+
+                                    string resourceTypeName = "";
+                                    string resourceTargetFolderName = "";
+                                    string modloader = "";
+
+                                    switch(result.projectType)
+                                    {
+                                        case ProjectType.Mod:
+                                            resourceTypeName = "mod";
+                                            resourceTargetFolderName = "mods";
+                                            break;
+                                        case ProjectType.Shader:
+                                            resourceTypeName = "shader";
+                                            resourceTargetFolderName = "shaderpacks";
+                                            break;
+                                    }
+                                    CTools.WriteError($"Single {resourceTypeName}: {result.name}", 0);
                                     //check for existing installations
                                     List<Installation> existingInstallations = insManager.installations.installations;
                                     if (insManager.currInstallation.installationDir != "") //filter by --path
@@ -494,16 +510,18 @@ Examples:
 
                                     if (ins == null)
                                     {
-                                        CTools.WriteLine("No existing project to install mod into");
+                                        CTools.WriteLine($"No existing project to install {resourceTypeName} into");
                                         Environment.Exit(1);
                                     }
 
                                     //get project again with mc version and loader from installation
                                     //TODO: decide if install pack/mod would be better to avoid double search
-                                    result = GetProject(installName, ins.mcVersion ?? installGameVersion, installModVersion, ins.modloader?.Split("-")[0] ?? installLoader, result.platformType, spinner);
+                                    if (result.projectType == ProjectType.Mod)
+                                        modloader = ins.modloader?.Split("-")[0] ?? installLoader;
+                                    result = GetProject(installName, ins.mcVersion ?? installGameVersion, installModVersion, modloader, result.platformType, spinner);
                                     if (result == null || result.urls.Count == 0 || result.urls[0] == "")
                                     {
-                                        CTools.WriteLine("No compatible version of the mod found for this installation");
+                                        CTools.WriteLine($"No compatible version of the {resourceTypeName} found for this installation");
                                         Environment.Exit(1);
                                     }
 
@@ -518,18 +536,19 @@ Examples:
                                             CTools.WriteLine(" " + Path.GetFileName(HttpUtility.UrlDecode(result.urls[i])));
                                         }
                                     }
-                                    CTools.WriteError("Compatible modloaders: " + result.loader, 0);
-                                    if (!CTools.ConfirmDialog("Install single mod", true))
+                                    if (result.loader != "")
+                                        CTools.WriteError("Compatible modloaders: " + result.loader, 0);
+                                    if (!CTools.ConfirmDialog($"Install single {resourceTypeName}", true))
                                     {
                                         //user canceled
                                         Environment.Exit(0);
                                         return;
                                     }
                                     spinner.top = CTools.CursorTop;
-                                    spinner.msg = "Downloading single mod";
+                                    spinner.msg = $"Downloading single {resourceTypeName}";
                                     for (int i = 0; i < result.urls.Count; i++)
                                     {
-                                        if (!Networking.DownloadFile(result.urls[i], dir + tempDir + "mods/" + Path.GetFileName(HttpUtility.UrlDecode(result.urls[i])), spinner))
+                                        if (!Networking.DownloadFile(result.urls[i], dir + tempDir + resourceTargetFolderName + "/" + Path.GetFileName(HttpUtility.UrlDecode(result.urls[i])), spinner))
                                         {
                                             CTools.WriteResult(false, spinner);
                                             Environment.Exit(0);
@@ -542,15 +561,15 @@ Examples:
                                     CustomMod custMod = new CustomMod();
                                     custMod.slug = insManager.currInstallation.slug;
                                     custMod.name = extractedName;
-                                    //copy mod
+                                    //copy resource
 
-                                    CTools.Write("Copy mod");
+                                    CTools.Write($"Copy {resourceTypeName}");
                                     for (int i = 0; i < result.urls.Count; i++)
                                     {
                                         try
                                         {
-                                            File.Copy(dir + tempDir + "mods/" + Path.GetFileName(HttpUtility.UrlDecode(result.urls[i])), ins.installationDir + "/mods/" + Path.GetFileName(HttpUtility.UrlDecode(result.urls[i])), true);
-                                            custMod.files.Add("/mods/" + Path.GetFileName(HttpUtility.UrlDecode(result.urls[i])));
+                                            File.Copy(dir + tempDir + resourceTargetFolderName + "/" + Path.GetFileName(HttpUtility.UrlDecode(result.urls[i])), ins.installationDir + "/" + resourceTargetFolderName + "/" + Path.GetFileName(HttpUtility.UrlDecode(result.urls[i])), true);
+                                            custMod.files.Add("/" + resourceTargetFolderName + "/" + Path.GetFileName(HttpUtility.UrlDecode(result.urls[i])));
                                         }
                                         catch
                                         {

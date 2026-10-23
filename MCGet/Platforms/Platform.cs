@@ -14,6 +14,7 @@ namespace MCGet.Platforms
         Invalid = 0,
         Modpack = 1,
         Mod = 2,
+        Shader = 3,
     }
 
     public class SearchResult
