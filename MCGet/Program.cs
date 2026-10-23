@@ -572,7 +572,7 @@ Examples:
                                     {
                                         try
                                         {
-                                            File.Copy(dir + tempDir + resourceTargetFolderName + "/" + Path.GetFileName(HttpUtility.UrlDecode(result.urls[i])), ins.installationDir + "/" + resourceTargetFolderName + "/" + Path.GetFileName(HttpUtility.UrlDecode(result.urls[i])), true);
+                                            File.Copy(dir + tempDir + resourceTargetFolderName + "/" + Path.GetFileName(HttpUtility.UrlDecode(result.urls[i])), InstallationManager.LocalToGlobalPath(ins.installationDir) + "/" + resourceTargetFolderName + "/" + Path.GetFileName(HttpUtility.UrlDecode(result.urls[i])), true);
                                             custMod.files.Add("/" + resourceTargetFolderName + "/" + Path.GetFileName(HttpUtility.UrlDecode(result.urls[i])));
                                         }
                                         catch
