@@ -1,3 +1,5 @@
+using ConsoleTools;
+
 namespace MCGet.Commands
 {
     public class CommandParams
@@ -12,13 +14,21 @@ namespace MCGet.Commands
             this.parameters = parameters;
         }
     }
-    public abstract class Command
+    public abstract class Command<TCommandParams>
+    where TCommandParams : CommandParams
     {
+        public Spinner spinner;
+        public Flags flags;
+
+        public Command(Flags flags, Spinner spinner)
+        {
+            this.flags = flags;
+            this.spinner = spinner;
+        }
         /// <summary>
         /// Runs the command
         /// </summary>
         /// <param name="commandParams"></param>
-        /// <returns>errorcode</returns>
-        public abstract int Run(CommandParams commandParams);
+        public abstract void Run(TCommandParams commandParams);
     }
 }
