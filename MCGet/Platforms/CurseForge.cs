@@ -104,7 +104,7 @@ namespace MCGet.Platforms
                 {
                     if (!CTools.ConfirmDialog(" " + failcount + " / " + Program.manifestDoc.RootElement.GetProperty("files").GetArrayLength() + " mods failed. Continue?", true))
                     {
-                        Program.RevertChanges();
+                        return false;
                     }
                 }
                 CTools.WriteLine();
@@ -113,7 +113,6 @@ namespace MCGet.Platforms
             else
             {
                 CTools.WriteError("Mainifest does not include any files");
-                Program.RevertChanges();
                 return false;
             }
             return true;
@@ -272,7 +271,7 @@ namespace MCGet.Platforms
             return false;
         }
 
-        public override bool InstallDependencies()
+        public override bool InstallDependencies(bool modifyExisting)
         {
             //get modloader
             string? modloaderVersion = "";
@@ -316,7 +315,7 @@ namespace MCGet.Platforms
             Program.insManager.currInstallation.modloader = modloaderVersion;
             Program.insManager.currInstallation.mcVersion = Program.manifestDoc?.RootElement.GetProperty("minecraft").GetProperty("version").GetString();
 
-            return InstallModloader(modLoader, modloaderVersion);
+            return InstallModloader(modLoader, modloaderVersion, modifyExisting);
         }
 
         //0 = Any

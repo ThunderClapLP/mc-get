@@ -63,7 +63,7 @@ namespace MCGet.Platforms
     {
         public string name = "";
         protected List<string> downloadedMods = new List<string>();
-        public abstract bool InstallDependencies();
+        public abstract bool InstallDependencies(bool modifyExisting);
 
         public abstract bool DownloadMods();
 
@@ -107,7 +107,6 @@ namespace MCGet.Platforms
                 CTools.WriteResult(false);
                 CTools.WriteLine(e.Message);
                 CTools.WriteLine(e.StackTrace);
-                Program.RevertChanges();
                 return false;
             }
             bar.Clear();
@@ -119,7 +118,7 @@ namespace MCGet.Platforms
         /// Installs the modloader and installs or updates the launcher profile
         /// </summary>
         /// <returns>true if successful</returns>
-        public virtual bool InstallModloader(ModLoader? modloader, string modloaderVersion)
+        public virtual bool InstallModloader(ModLoader? modloader, string modloaderVersion, bool modifyExisting)
         {
             ProfileHandler ph = new ProfileHandler();
             ph.CreateSnapshot(Program.insManager.currInstallation.minecraftDir + "/launcher_profiles.json", ProfileHandler.SnapshotNumber.FIRST);
@@ -134,7 +133,7 @@ namespace MCGet.Platforms
             ph.LoadProfiles(Program.insManager.currInstallation.minecraftDir + "/launcher_profiles.json");
             //remove old profile
             string? oldProfileName = null;
-            if (Program.modifyExisting && Program.insManager.currInstallation.modloaderProfile != null)
+            if (modifyExisting && Program.insManager.currInstallation.modloaderProfile != null)
             {
                 oldProfileName = ph.GetProfileName(Program.insManager.currInstallation.modloaderProfile);
                 ph.RemoveProfile(Program.insManager.currInstallation.modloaderProfile);
@@ -148,7 +147,7 @@ namespace MCGet.Platforms
             if (newProfile != "")
             {
                 //no error checks at the moment
-                if (Program.modifyExisting && oldProfileName != null)
+                if (modifyExisting && oldProfileName != null)
                 {
                     ph.SetProfileName(newProfile, oldProfileName, true); //use original profile name
                 }

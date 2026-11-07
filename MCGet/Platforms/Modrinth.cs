@@ -59,8 +59,7 @@ namespace MCGet.Platforms
 
                     if (requiredSpace > freeSpace - 10000) { //10MB buffer to prevent issues
                         CTools.WriteError("Not enough disk space! " + Math.Max((requiredSpace - freeSpace - 10000) / 1024, 1) + " MB more requiered.");
-                        Program.RevertChanges(); //cannot proceed
-                        return false;
+                        return false; //cannot proceed
                     }
                     
                 }
@@ -69,8 +68,7 @@ namespace MCGet.Platforms
                     //failed to get free space. Ask user to check
                     CTools.WriteError("Could not get free disc space. Please make sure enough disc space is available before continuing!", 1);
                     if (!CTools.ConfirmDialog((requiredSpace + 10000) / 1024 + " MB is required. Continue?", true)) {
-                        Program.RevertChanges(); //aborted
-                        return false;
+                        return false; //aborted
                     }
                 }
 
@@ -107,7 +105,6 @@ namespace MCGet.Platforms
                 {
                     if (!CTools.ConfirmDialog(" " + failedMods.Count + " / " + Program.manifestDoc.RootElement.GetProperty("files").GetArrayLength() + " mods failed. Continue?", true))
                     {
-                        Program.RevertChanges();
                         return false;
                     }
                 }
@@ -136,7 +133,7 @@ namespace MCGet.Platforms
             return true;
         }
 
-        public override bool InstallDependencies()
+        public override bool InstallDependencies(bool modifyExisting)
         {
             //get modloader
             string modloaderVersion = "";
@@ -179,7 +176,7 @@ namespace MCGet.Platforms
             Program.insManager.currInstallation.modloader = modloaderVersion;
             Program.insManager.currInstallation.mcVersion = Program.manifestDoc?.RootElement.GetProperty("dependencies").GetProperty("minecraft").GetString();
 
-            return InstallModloader(modLoader, modloaderVersion);
+            return InstallModloader(modLoader, modloaderVersion, modifyExisting);
         }
 
         public static async Task<GetProjectResult> GetProject(string name, string minecraftVersion, string modVersion, string loader = "")
