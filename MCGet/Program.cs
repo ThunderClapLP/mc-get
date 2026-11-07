@@ -35,11 +35,7 @@ namespace MCGet
         public static InstallationManager insManager = new InstallationManager();
 
         //command line args
-        public static bool cSilent = false;
-        public static bool cServer = false;
-        public static bool cModrinth = false;
-        public static bool cCurseForge = false;
-        public static string cMCVersion = "";
+        public static Flags flags = new Flags();
         public static COMMANDS command = COMMANDS.NONE;
         public static List<string> commandParams = new List<string>();
 
@@ -76,7 +72,7 @@ namespace MCGet
                 {
                     case "--silent":
                     case "-s":
-                        cSilent = true;
+                        flags.Silent = true;
                         CTools.SilentMode = true;
                         break;
                     case "-h":
@@ -154,7 +150,7 @@ Examples:
                     case "--mc-version":
                         if (i < args.Length - 1)
                         {
-                            cMCVersion = args[i + 1];
+                            flags.MCVersion = args[i + 1];
                             i++;
                         }
                         break;
@@ -163,11 +159,11 @@ Examples:
                         if (i < args.Length - 1)
                         {
                             if (args[i + 1] == "cf" || args[i + 1].ToLower() == "curseforge")
-                                cCurseForge = true;
+                                flags.CurseForge = true;
                             else if (args[i + 1] == "mr" || args[i + 1].ToLower() == "modrinth")
-                                cModrinth = true;
+                                flags.Modrinth = true;
                         }
-                        if (!cCurseForge && !cModrinth)
+                        if (!flags.CurseForge && !flags.Modrinth)
                         {
                             invalidArgs = true;
                             invalidArgsSuggestion = new string[] { args[i] + " mr", args[i] + " modrinth", args[i] + " cf", args[i] + " curseforge" };
@@ -177,7 +173,7 @@ Examples:
                         i++;
                         break;
                     case "--server":
-                        cServer = true;
+                        flags.Server = true;
                         insManager.currInstallation.isServer = true;
                         break;
                     case "--set":
@@ -370,7 +366,7 @@ Examples:
                 case COMMANDS.INSTALL:
                     {
                         string installLoader = "";
-                        string installGameVersion = cMCVersion;
+                        string installGameVersion = flags.MCVersion;
                         string installModVersion = "";
                         string installName = commandParams[0].Split(":")[0];
                         for (int j = 1; j < commandParams[0].Split(":").Length; j++)
@@ -388,7 +384,7 @@ Examples:
                         {
 
                             GetProjectResult? result = GetProject(installName, installGameVersion, installModVersion, installLoader,
-                                (!cCurseForge && !cModrinth) ? null : (cModrinth ? typeof(Modrinth) : typeof(CurseForge)), spinner);
+                                (!flags.CurseForge && !flags.Modrinth) ? null : (flags.Modrinth ? typeof(Modrinth) : typeof(CurseForge)), spinner);
                             insManager.EnsureUniqueId(insManager.currInstallation);
 
                             //download archive
@@ -802,7 +798,7 @@ Examples:
                             {
                                 //remove installation
                                 CTools.WriteError("All saved worlds will be lost!", 1);
-                                if (cSilent || CTools.ConfirmDialog("Are you sure to permanently remove installation \"" + ins.modpackName + "\" (" + ins.Id + ") from your disk?", false))
+                                if (flags.Silent || CTools.ConfirmDialog("Are you sure to permanently remove installation \"" + ins.modpackName + "\" (" + ins.Id + ") from your disk?", false))
                                 {
                                     CTools.Write("Removing installation");
                                     try
@@ -1149,7 +1145,7 @@ Examples:
                     if (Directory.GetFileSystemEntries(InstallationManager.LocalToGlobalPath(insManager.currInstallation.installationDir.Replace("\\", "/"))).Length > 0)
                     {
                         CTools.WriteError("Installation directory is not empty. The remove command will not be able to delete the installed files!", 1);
-                        if (!(cSilent || CTools.ConfirmDialog("Continue anyway?", false)))
+                        if (!(flags.Silent || CTools.ConfirmDialog("Continue anyway?", false)))
                         {
                             Environment.Exit(1);
                         }
@@ -1247,7 +1243,7 @@ Examples:
                         else
                             CTools.WriteError("Minecraft directory not found!");
 
-                        if (cSilent)
+                        if (flags.Silent)
                             Environment.Exit(0);
 
                         confirmed = false;
@@ -1281,7 +1277,7 @@ Examples:
                 if (insManager.currInstallation.installationDir == "")
                 {
                     CTools.Write("Enter the server path (leave empty for current directory): ");
-                    if (!cSilent)
+                    if (!flags.Silent)
                     {
                         try {insManager.currInstallation.installationDir = Console.ReadLine() + "";}
                         catch {CTools.WriteLine("Getting user input failed!"); }
