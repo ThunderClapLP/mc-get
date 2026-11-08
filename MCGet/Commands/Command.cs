@@ -19,11 +19,13 @@ namespace MCGet.Commands
     {
         public Spinner spinner;
         public Flags flags;
+        public InstallationManager insManager;
 
-        public Command(Flags flags, Spinner spinner)
+        public Command(Flags flags, Spinner spinner, InstallationManager insManager)
         {
             this.flags = flags;
             this.spinner = spinner;
+            this.insManager = insManager;
         }
         /// <summary>
         /// Runs the command

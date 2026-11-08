@@ -41,15 +41,13 @@ namespace MCGet.Commands
         public string tempDir;
         public string backupDir;
         public string archiveDir;
-        InstallationManager insManager;
         InstallLogger installLogger;
         public bool modifyExisting = false;
         public string extractedName = "";
 
 
-        public Install(Flags flags, Spinner spinner, InstallationManager insManager, InstallLogger installLogger, string dir, string tempDir, string backupDir, string archiveDir) : base(flags, spinner)
+        public Install(Flags flags, Spinner spinner, InstallationManager insManager, InstallLogger installLogger, string dir, string tempDir, string backupDir, string archiveDir) : base(flags, spinner, insManager)
         {
-            this.insManager = insManager;
             this.installLogger = installLogger;
             this.dir = dir;
             this.tempDir = tempDir;
